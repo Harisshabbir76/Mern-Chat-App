@@ -18,6 +18,7 @@ type AuthContextType = {
   registerMutation: UseMutationResult<SelectUser, Error, InsertUser>;
 };
 
+// This type matches what the login form sends
 type LoginData = {
   email: string;
   password: string;

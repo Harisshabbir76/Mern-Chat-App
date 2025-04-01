@@ -18,7 +18,9 @@ import { Loader2 } from 'lucide-react';
 
 // Login form schema
 const loginSchema = z.object({
-  email: z.string().email('Invalid email address'),
+  email: z.string().min(1, 'Email is required').email({
+    message: 'Invalid email address format'
+  }),
   password: z.string().min(6, 'Password must be at least 6 characters'),
 });
 
@@ -26,8 +28,11 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 
 // Register form schema
 const registerSchema = z.object({
+  name: z.string().min(2, 'Name must be at least 2 characters'),
   username: z.string().min(3, 'Username must be at least 3 characters'),
-  email: z.string().email('Invalid email address'),
+  email: z.string().min(1, 'Email is required').email({
+    message: 'Invalid email address format'
+  }),
   password: z.string().min(6, 'Password must be at least 6 characters'),
   confirmPassword: z.string().min(6, 'Password must be at least 6 characters'),
 }).refine(data => data.password === data.confirmPassword, {
@@ -54,6 +59,7 @@ export default function AuthPage() {
   const registerForm = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
     defaultValues: {
+      name: '',
       username: '',
       email: '',
       password: '',
@@ -68,8 +74,9 @@ export default function AuthPage() {
 
   // Handle register submission
   const onRegisterSubmit = (data: RegisterFormValues) => {
-    const { username, email, password } = data;
-    registerMutation.mutate({ username, email, password });
+    console.log("Form data:", data); // Add debug logging
+    const { name, username, email, password } = data;
+    registerMutation.mutate({ name, username, email, password, avatar: null });
   };
 
   // If user is already logged in, redirect to the chat page
@@ -135,6 +142,20 @@ export default function AuthPage() {
           ) : (
             <Form {...registerForm}>
               <form onSubmit={registerForm.handleSubmit(onRegisterSubmit)} className="space-y-5">
+                <FormField
+                  control={registerForm.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Full Name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Enter your full name" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
                 <FormField
                   control={registerForm.control}
                   name="username"

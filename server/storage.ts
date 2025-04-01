@@ -72,8 +72,12 @@ export class MemStorage implements IStorage {
     const id = this.currentUserId++;
     const now = new Date();
     const user: User = { 
-      ...insertUser, 
       id,
+      name: insertUser.name,
+      username: insertUser.username,
+      email: insertUser.email,
+      password: insertUser.password,
+      avatar: insertUser.avatar || null,
       createdAt: now,
       lastActive: now,
       isOnline: true
@@ -103,9 +107,16 @@ export class MemStorage implements IStorage {
   
   async createMessage(insertMessage: InsertMessage): Promise<Message> {
     const id = this.currentMessageId++;
+    // Ensure senderId and receiverId are defined
+    if (insertMessage.senderId === undefined || insertMessage.receiverId === undefined) {
+      throw new Error('senderId and receiverId must be defined');
+    }
+    
     const message: Message = {
-      ...insertMessage,
       id,
+      content: insertMessage.content,
+      senderId: insertMessage.senderId,
+      receiverId: insertMessage.receiverId,
       timestamp: new Date(),
       read: false
     };
@@ -171,7 +182,7 @@ export class MemStorage implements IStorage {
     
     // Sort by most recent message
     return result
-      .filter(Boolean)
+      .filter((item): item is NonNullable<typeof item> => item !== null)
       .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
   }
   
@@ -184,6 +195,10 @@ export class MemStorage implements IStorage {
   }
   
   async createOrUpdateConversation(userId: number, otherUserId: number, messageId: number): Promise<Conversation> {
+    // Ensure all parameters are defined
+    if (userId === undefined || otherUserId === undefined || messageId === undefined) {
+      throw new Error('userId, otherUserId, and messageId must be defined');
+    }
     // Try to find existing conversation
     const existingConversation = await this.getConversation(userId, otherUserId);
     

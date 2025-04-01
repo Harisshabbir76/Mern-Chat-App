@@ -3,7 +3,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 
 type AvatarWithStatusProps = {
-  src?: string;
+  src?: string | null;  // Allow null value for src
   name: string;
   size?: 'sm' | 'md' | 'lg';
   isOnline?: boolean;
@@ -41,10 +41,13 @@ export function AvatarWithStatus({
     return `${parts[0].charAt(0)}${parts[parts.length - 1].charAt(0)}`;
   };
 
+  // Handle null or undefined src by converting to undefined for the component
+  const imageSrc = src === null ? undefined : src;
+  
   return (
     <div className={cn('relative', className)}>
       <Avatar className={sizeMap[size].avatar}>
-        <AvatarImage src={src} alt={name} />
+        <AvatarImage src={imageSrc} alt={name} />
         <AvatarFallback>{getInitials()}</AvatarFallback>
       </Avatar>
       {isOnline !== undefined && (
