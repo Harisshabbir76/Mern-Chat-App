@@ -6,7 +6,7 @@ type AvatarWithStatusProps = {
   src?: string | null;  // Allow null value for src
   name: string;
   size?: 'sm' | 'md' | 'lg';
-  isOnline?: boolean;
+  isOnline?: boolean | null;  // Allow null value for isOnline
   className?: string;
 };
 
@@ -50,7 +50,7 @@ export function AvatarWithStatus({
         <AvatarImage src={imageSrc} alt={name} />
         <AvatarFallback>{getInitials()}</AvatarFallback>
       </Avatar>
-      {isOnline !== undefined && (
+      {isOnline !== undefined && isOnline !== null && (
         <span
           className={cn(
             'absolute border-2 border-white rounded-full',

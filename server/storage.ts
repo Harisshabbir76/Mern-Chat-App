@@ -24,10 +24,13 @@ export interface IStorage {
   // Conversation methods
   getConversations(userId: number): Promise<any[]>;
   getConversation(user1Id: number, user2Id: number): Promise<Conversation | undefined>;
-  createOrUpdateConversation(userId: number, otherUserId: number, messageId: number): Promise<Conversation>;
+  createOrUpdateConversation(userId: number, otherUserId: number, messageId: any): Promise<Conversation>;
   
   // Session store
   sessionStore: any;
+  
+  // Optional connection method for database-backed storage
+  connect?: (uri: string) => Promise<void>;
 }
 
 export class MemStorage implements IStorage {
@@ -267,4 +270,30 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+// Use MongoDB storage when MONGODB_URI environment variable is set
+// otherwise fall back to in-memory storage
+import { MongoStorage } from './mongo-storage';
+
+let storage: IStorage;
+
+// Check if MongoDB URI is provided in environment variables
+const mongoUri = process.env.MONGODB_URI;
+
+if (mongoUri) {
+  storage = new MongoStorage();
+  // Connect to MongoDB (this is async, but we can't make this an async function)
+  (async () => {
+    try {
+      await (storage as MongoStorage).connect(mongoUri);
+      console.log('Using MongoDB storage');
+    } catch (error) {
+      console.error('Failed to connect to MongoDB, falling back to in-memory storage', error);
+      storage = new MemStorage();
+    }
+  })();
+} else {
+  console.log('No MongoDB URI provided, using in-memory storage');
+  storage = new MemStorage();
+}
+
+export { storage };
