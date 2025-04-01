@@ -1,4 +1,4 @@
-import mongoose from 'mongoose';
+import mongoose, { Document } from 'mongoose';
 import { IStorage } from './storage';
 import { User, Message, Conversation, InsertUser, InsertMessage } from '@shared/schema';
 import UserModel from './models/user';
@@ -146,14 +146,14 @@ export class MongoStorage implements IStorage {
 
   async createMessage(messageData: InsertMessage): Promise<Message> {
     try {
-      const newMessage = new MessageModel(messageData);
+      const newMessage = new MessageModel(messageData) as Document & { _id: mongoose.Types.ObjectId };
       await newMessage.save();
       
       // Update or create conversation
       await this.createOrUpdateConversation(
         messageData.senderId,
         messageData.receiverId,
-        newMessage._id
+        newMessage._id.toString() // Convert ObjectId to string with proper type cast
       );
       
       return newMessage.toJSON() as Message;
@@ -254,9 +254,12 @@ export class MongoStorage implements IStorage {
         ]
       });
       
+      // Convert messageId to string if it's an ObjectId
+      const messageIdString = messageId.toString();
+      
       if (conversation) {
         // Update existing conversation
-        conversation.lastMessageId = messageId;
+        conversation.lastMessageId = messageIdString;
         conversation.updatedAt = new Date();
         await conversation.save();
       } else {
@@ -264,7 +267,7 @@ export class MongoStorage implements IStorage {
         conversation = new ConversationModel({
           user1Id: userId,
           user2Id: otherUserId,
-          lastMessageId: messageId,
+          lastMessageId: messageIdString,
           updatedAt: new Date()
         });
         await conversation.save();

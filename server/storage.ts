@@ -163,7 +163,9 @@ export class MemStorage implements IStorage {
       senderId: insertMessage.senderId,
       receiverId: insertMessage.receiverId,
       timestamp: new Date(),
-      read: false
+      read: false,
+      messageType: insertMessage.messageType || 'text',
+      mediaUrl: insertMessage.mediaUrl || null
     };
     this.messages.set(id, message);
     

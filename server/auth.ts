@@ -31,7 +31,7 @@ async function comparePasswords(supplied: string, stored: string) {
 
 // Custom login validator
 const loginSchema = z.object({
-  email: z.string().email("Invalid email format"),
+  email: z.string(), // Changed from email validation to accept username too
   password: z.string().min(6, "Password must be at least 6 characters"),
 });
 
@@ -60,15 +60,24 @@ export function setupAuth(app: Express) {
   passport.use(
     new LocalStrategy(
       {
-        usernameField: "email",
+        usernameField: "email", // This field now accepts both email and username
         passwordField: "password",
       },
-      async (email, password, done) => {
+      async (emailOrUsername, password, done) => {
         try {
-          const user = await storage.getUserByEmail(email);
+          // Try to find user by email first
+          let user = await storage.getUserByEmail(emailOrUsername);
+          
+          // If not found by email, try username
+          if (!user) {
+            user = await storage.getUserByUsername(emailOrUsername);
+          }
+          
           if (!user || !(await comparePasswords(password, user.password))) {
             return done(null, false);
           } else {
+            // Update user's online status
+            await storage.updateUserStatus(user.id, true);
             return done(null, user);
           }
         } catch (err) {
@@ -79,7 +88,7 @@ export function setupAuth(app: Express) {
   );
 
   passport.serializeUser((user, done) => done(null, user.id));
-  passport.deserializeUser(async (id: number, done) => {
+  passport.deserializeUser(async (id: string, done) => {
     try {
       const user = await storage.getUser(id);
       done(null, user);
@@ -140,7 +149,7 @@ export function setupAuth(app: Express) {
       passport.authenticate("local", (err, user, info) => {
         if (err) return next(err);
         if (!user) {
-          return res.status(401).send("Invalid email or password");
+          return res.status(401).send("Invalid username, email or password");
         }
         
         req.login(user, (err) => {

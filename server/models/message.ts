@@ -6,7 +6,9 @@ const messageSchema = new mongoose.Schema({
   receiverId: { type: String, required: true },
   content: { type: String, required: true },
   timestamp: { type: Date, default: Date.now },
-  read: { type: Boolean, default: false }
+  read: { type: Boolean, default: false },
+  messageType: { type: String, enum: ['text', 'image', 'video'], default: 'text' },
+  mediaUrl: { type: String, default: null }
 });
 
 // Create virtual id field that maps to _id

@@ -14,6 +14,8 @@ interface ChatContextType {
   messages: Message[];
   isLoadingMessages: boolean;
   sendMessage: (content: string) => void;
+  sendImageMessage: (imageUrl: string, caption: string) => void;
+  sendVideoMessage: (videoUrl: string, caption: string) => void;
   setActiveConversation: (conv: ConversationWithUser) => void;
   usersTyping: Record<string, boolean>;
   setTypingStatus: (isTyping: boolean) => void;
@@ -144,6 +146,8 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         
         switch (data.type) {
           case MessageType.TEXT:
+          case MessageType.IMAGE:
+          case MessageType.VIDEO:
             // New message received, update messages if it's for the current conversation
             if (activeUser?.id === data.senderId) {
               const newMessage: Message = {
@@ -152,7 +156,9 @@ export function ChatProvider({ children }: { children: ReactNode }) {
                 senderId: data.senderId,
                 receiverId: data.receiverId,
                 timestamp: new Date(data.timestamp!),
-                read: true
+                read: true,
+                messageType: data.type as 'text' | 'image' | 'video',
+                mediaUrl: data.mediaUrl || null
               };
               
               queryClient.setQueryData(
@@ -221,11 +227,111 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     };
   }, [socket, connected, user, activeUser, activeConversation, markAsReadMutation]);
 
-  // Function to send a message
+  // Function to send a text message
   const sendMessage = useCallback((content: string) => {
     if (content.trim() === "") return;
     sendMessageMutation.mutate(content);
   }, [sendMessageMutation]);
+  
+  // Function to send an image message
+  const sendImageMessage = useCallback((imageUrl: string, caption: string) => {
+    if (!user || !activeConversation || !activeUser) {
+      toast({
+        title: "Error",
+        description: "Cannot send image - missing user or conversation",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    const messageData = {
+      content: caption || "Image",
+      senderId: user.id,
+      receiverId: activeUser.id,
+      messageType: "image" as const,
+      mediaUrl: imageUrl
+    };
+    
+    apiRequest("POST", "/api/messages", messageData)
+      .then(res => res.json())
+      .then((newMessage: Message) => {
+        // Update messages in the current conversation
+        queryClient.setQueryData(['/api/messages', activeConversation?.id], 
+          (old: Message[] = []) => [...old, newMessage]);
+        
+        // Also update conversations list to move this to the top
+        queryClient.invalidateQueries({ queryKey: ['/api/conversations'] });
+        
+        // Send the message via WebSocket as well
+        if (connected && activeUser) {
+          sendWsMessage({
+            type: MessageType.IMAGE,
+            senderId: user.id,
+            receiverId: activeUser.id,
+            content: caption || "Image",
+            timestamp: new Date().toISOString(),
+            mediaUrl: imageUrl
+          });
+        }
+      })
+      .catch(error => {
+        toast({
+          title: "Failed to send image",
+          description: error.message,
+          variant: "destructive",
+        });
+      });
+  }, [user, activeConversation, activeUser, connected, sendWsMessage, toast]);
+  
+  // Function to send a video message
+  const sendVideoMessage = useCallback((videoUrl: string, caption: string) => {
+    if (!user || !activeConversation || !activeUser) {
+      toast({
+        title: "Error",
+        description: "Cannot send video - missing user or conversation",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    const messageData = {
+      content: caption || "Video",
+      senderId: user.id,
+      receiverId: activeUser.id,
+      messageType: "video" as const,
+      mediaUrl: videoUrl
+    };
+    
+    apiRequest("POST", "/api/messages", messageData)
+      .then(res => res.json())
+      .then((newMessage: Message) => {
+        // Update messages in the current conversation
+        queryClient.setQueryData(['/api/messages', activeConversation?.id], 
+          (old: Message[] = []) => [...old, newMessage]);
+        
+        // Also update conversations list to move this to the top
+        queryClient.invalidateQueries({ queryKey: ['/api/conversations'] });
+        
+        // Send the message via WebSocket as well
+        if (connected && activeUser) {
+          sendWsMessage({
+            type: MessageType.VIDEO,
+            senderId: user.id,
+            receiverId: activeUser.id,
+            content: caption || "Video",
+            timestamp: new Date().toISOString(),
+            mediaUrl: videoUrl
+          });
+        }
+      })
+      .catch(error => {
+        toast({
+          title: "Failed to send video",
+          description: error.message,
+          variant: "destructive",
+        });
+      });
+  }, [user, activeConversation, activeUser, connected, sendWsMessage, toast]);
 
   return (
     <ChatContext.Provider value={{
@@ -236,6 +342,8 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       messages,
       isLoadingMessages,
       sendMessage,
+      sendImageMessage,
+      sendVideoMessage,
       setActiveConversation: handleSetActiveConversation,
       usersTyping,
       setTypingStatus,

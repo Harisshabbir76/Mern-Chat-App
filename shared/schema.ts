@@ -31,12 +31,16 @@ export const messages = pgTable("messages", {
   receiverId: serial("receiver_id").references(() => users.id).notNull(),
   timestamp: timestamp("timestamp").defaultNow().notNull(),
   read: boolean("read").default(false),
+  messageType: text("message_type").default("text").notNull(), // "text", "image", "video"
+  mediaUrl: text("media_url"),
 });
 
 export const insertMessageSchema = z.object({
   content: z.string(),
   senderId: z.string(),
-  receiverId: z.string()
+  receiverId: z.string(),
+  messageType: z.enum(["text", "image", "video"]).default("text"),
+  mediaUrl: z.string().nullable().optional()
 });
 
 // Conversations schema for easy retrieval of recent conversations
@@ -76,6 +80,8 @@ export type Message = {
   receiverId: string;
   timestamp: Date;
   read: boolean;
+  messageType: "text" | "image" | "video";
+  mediaUrl?: string | null;
 };
 
 export type InsertConversation = z.infer<typeof insertConversationSchema>;
@@ -90,6 +96,8 @@ export type Conversation = {
 // WebSocket message types
 export enum MessageType {
   TEXT = 'text',
+  IMAGE = 'image',
+  VIDEO = 'video',
   TYPING = 'typing',
   STATUS = 'status'
 }
@@ -100,4 +108,5 @@ export type WebSocketMessage = {
   receiverId: string;
   content?: string;
   timestamp?: string;
+  mediaUrl?: string;
 };
