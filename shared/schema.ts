@@ -15,12 +15,12 @@ export const users = pgTable("users", {
   isOnline: boolean("is_online").default(false),
 });
 
-export const insertUserSchema = createInsertSchema(users).pick({
-  name: true,
-  username: true,
-  email: true, 
-  password: true,
-  avatar: true,
+export const insertUserSchema = z.object({
+  name: z.string(),
+  username: z.string(),
+  email: z.string().email(),
+  password: z.string().min(6),
+  avatar: z.string().nullable().optional()
 });
 
 // Messages schema
@@ -33,10 +33,10 @@ export const messages = pgTable("messages", {
   read: boolean("read").default(false),
 });
 
-export const insertMessageSchema = createInsertSchema(messages).pick({
-  content: true,
-  senderId: true,
-  receiverId: true,
+export const insertMessageSchema = z.object({
+  content: z.string(),
+  senderId: z.string(),
+  receiverId: z.string()
 });
 
 // Conversations schema for easy retrieval of recent conversations
@@ -48,21 +48,44 @@ export const conversations = pgTable("conversations", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
-export const insertConversationSchema = createInsertSchema(conversations).pick({
-  user1Id: true,
-  user2Id: true,
-  lastMessageId: true,
+export const insertConversationSchema = z.object({
+  user1Id: z.string(),
+  user2Id: z.string(),
+  lastMessageId: z.string().nullable()
 });
 
 // Types
 export type InsertUser = z.infer<typeof insertUserSchema>;
-export type User = typeof users.$inferSelect;
+export type User = {
+  id: string;
+  name: string;
+  username: string;
+  email: string;
+  password: string;
+  avatar: string | null;
+  createdAt: Date;
+  lastActive: Date;
+  isOnline: boolean;
+};
 
 export type InsertMessage = z.infer<typeof insertMessageSchema>;
-export type Message = typeof messages.$inferSelect;
+export type Message = {
+  id: string;
+  content: string;
+  senderId: string;
+  receiverId: string;
+  timestamp: Date;
+  read: boolean;
+};
 
 export type InsertConversation = z.infer<typeof insertConversationSchema>;
-export type Conversation = typeof conversations.$inferSelect;
+export type Conversation = {
+  id: string;
+  user1Id: string;
+  user2Id: string;
+  lastMessageId: string | null;
+  updatedAt: Date;
+};
 
 // WebSocket message types
 export enum MessageType {
@@ -73,8 +96,8 @@ export enum MessageType {
 
 export type WebSocketMessage = {
   type: MessageType;
-  senderId: number;
-  receiverId: number;
+  senderId: string;
+  receiverId: string;
   content?: string;
   timestamp?: string;
 };

@@ -279,7 +279,7 @@ function ChatPageContent() {
                         src={conversation.otherUser.avatar}
                         name={conversation.otherUser.name}
                         size="lg"
-                        isOnline={onlineUsers.has(conversation.otherUser.id)}
+                        isOnline={onlineUsers.has(conversation.otherUser.id.toString())}
                       />
                     </div>
                     <div className="flex-1 min-w-0">
@@ -330,7 +330,7 @@ function ChatPageContent() {
                       src={activeUser?.avatar}
                       name={activeUser?.name || ""}
                       size="md"
-                      isOnline={activeUser ? onlineUsers.has(activeUser.id) : false}
+                      isOnline={activeUser ? onlineUsers.has(activeUser.id.toString()) : false}
                       className="mr-3"
                     />
                     <div>
@@ -340,12 +340,12 @@ function ChatPageContent() {
                       <div className="flex items-center">
                         <span className={cn(
                           "w-2 h-2 rounded-full mr-2",
-                          activeUser && onlineUsers.has(activeUser.id) 
+                          activeUser && onlineUsers.has(activeUser.id.toString()) 
                             ? "bg-emerald-500" 
                             : "bg-gray-400"
                         )}></span>
                         <span className="text-xs text-gray-500">
-                          {activeUser && onlineUsers.has(activeUser.id) ? "Online" : "Offline"}
+                          {activeUser && onlineUsers.has(activeUser.id.toString()) ? "Online" : "Offline"}
                         </span>
                       </div>
                     </div>
@@ -456,7 +456,7 @@ function ChatPageContent() {
                   )}
                   
                   {/* Typing indicator */}
-                  {activeUser && usersTyping[activeUser.id] && (
+                  {activeUser && usersTyping[activeUser.id.toString()] && (
                     <div className="flex mb-4">
                       <AvatarWithStatus
                         src={activeUser.avatar}

@@ -30,7 +30,7 @@ export class MongoStorage implements IStorage {
   }
 
   // User methods
-  async getUser(id: number): Promise<User | undefined> {
+  async getUser(id: string): Promise<User | undefined> {
     try {
       const user = await UserModel.findById(id);
       return user ? user.toJSON() as User : undefined;
@@ -71,7 +71,7 @@ export class MongoStorage implements IStorage {
     }
   }
 
-  async updateUserStatus(userId: number, isOnline: boolean): Promise<void> {
+  async updateUserStatus(userId: string, isOnline: boolean): Promise<void> {
     try {
       await UserModel.findByIdAndUpdate(userId, { 
         isOnline, 
@@ -83,7 +83,7 @@ export class MongoStorage implements IStorage {
     }
   }
 
-  async searchUsers(query: string, currentUserId: number): Promise<User[]> {
+  async searchUsers(query: string, currentUserId: string): Promise<User[]> {
     try {
       const users = await UserModel.find({
         $and: [
@@ -105,7 +105,7 @@ export class MongoStorage implements IStorage {
     }
   }
 
-  async updateUser(userId: number, userData: Partial<User>): Promise<User> {
+  async updateUser(userId: string, userData: Partial<User>): Promise<User> {
     try {
       const updatedUser = await UserModel.findByIdAndUpdate(
         userId, 
@@ -125,7 +125,7 @@ export class MongoStorage implements IStorage {
   }
 
   // Message methods
-  async getMessages(userId: number, otherUserId: number): Promise<Message[]> {
+  async getMessages(userId: string, otherUserId: string): Promise<Message[]> {
     try {
       const messages = await MessageModel.find({
         $or: [
@@ -163,7 +163,7 @@ export class MongoStorage implements IStorage {
     }
   }
 
-  async markMessagesAsRead(userId: number, otherUserId: number): Promise<void> {
+  async markMessagesAsRead(userId: string, otherUserId: string): Promise<void> {
     try {
       await MessageModel.updateMany(
         { senderId: otherUserId, receiverId: userId, read: false },
@@ -176,7 +176,7 @@ export class MongoStorage implements IStorage {
   }
 
   // Conversation methods
-  async getConversations(userId: number): Promise<any[]> {
+  async getConversations(userId: string): Promise<any[]> {
     try {
       // Find all conversations for user
       const conversations = await ConversationModel.find({
@@ -228,7 +228,7 @@ export class MongoStorage implements IStorage {
     }
   }
 
-  async getConversation(user1Id: number, user2Id: number): Promise<Conversation | undefined> {
+  async getConversation(user1Id: string, user2Id: string): Promise<Conversation | undefined> {
     try {
       const conversation = await ConversationModel.findOne({
         $or: [
@@ -244,7 +244,7 @@ export class MongoStorage implements IStorage {
     }
   }
 
-  async createOrUpdateConversation(userId: number, otherUserId: number, messageId: mongoose.Types.ObjectId): Promise<Conversation> {
+  async createOrUpdateConversation(userId: string, otherUserId: string, messageId: mongoose.Types.ObjectId | string): Promise<Conversation> {
     try {
       // Find existing conversation
       let conversation = await ConversationModel.findOne({

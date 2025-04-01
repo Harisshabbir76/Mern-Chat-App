@@ -43,7 +43,7 @@ export function UserSearch({ onClose }: UserSearchProps) {
   
   // Start a conversation
   const startConversationMutation = useMutation({
-    mutationFn: async (receiverId: number) => {
+    mutationFn: async (receiverId: string) => {
       const res = await apiRequest('POST', '/api/messages', {
         content: 'Hello! I would like to chat with you.',
         receiverId,
@@ -69,7 +69,7 @@ export function UserSearch({ onClose }: UserSearchProps) {
     },
   });
   
-  const handleStartConversation = (userId: number) => {
+  const handleStartConversation = (userId: string) => {
     startConversationMutation.mutate(userId);
   };
   

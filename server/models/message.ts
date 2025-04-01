@@ -2,8 +2,8 @@ import mongoose from 'mongoose';
 import { Message } from '@shared/schema';
 
 const messageSchema = new mongoose.Schema({
-  senderId: { type: Number, required: true },
-  receiverId: { type: Number, required: true },
+  senderId: { type: String, required: true },
+  receiverId: { type: String, required: true },
   content: { type: String, required: true },
   timestamp: { type: Date, default: Date.now },
   read: { type: Boolean, default: false }
@@ -11,13 +11,14 @@ const messageSchema = new mongoose.Schema({
 
 // Create virtual id field that maps to _id
 messageSchema.virtual('id').get(function() {
-  return this._id;
+  return this._id.toString();
 });
 
 // Ensure virtual fields are serialized
 messageSchema.set('toJSON', {
   virtuals: true,
   transform: (doc, ret) => {
+    ret.id = ret._id.toString();
     delete ret._id;
     delete ret.__v;
   }

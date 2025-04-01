@@ -4,7 +4,7 @@ import { MessageType, WebSocketMessage } from '@shared/schema';
 import { storage } from './storage';
 
 interface AuthenticatedClient extends WebSocket {
-  userId?: number;
+  userId?: string;
   isAlive: boolean;
 }
 
@@ -12,7 +12,7 @@ export function setupWebSocketServer(server: Server) {
   const wss = new WebSocketServer({ server, path: '/ws' });
   
   // Map of connected clients by user ID
-  const clients = new Map<number, AuthenticatedClient>();
+  const clients = new Map<string, AuthenticatedClient>();
   
   // Handle new connections
   wss.on('connection', (ws: AuthenticatedClient) => {
@@ -103,7 +103,7 @@ export function setupWebSocketServer(server: Server) {
         const offlineMessage: WebSocketMessage = {
           type: MessageType.STATUS,
           senderId: ws.userId,
-          receiverId: 0, // broadcast
+          receiverId: '0', // broadcast
           content: 'offline'
         };
         

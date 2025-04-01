@@ -42,7 +42,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/messages/:conversationId", isAuthenticated, async (req, res) => {
     try {
       const userId = req.user!.id;
-      const conversationId = parseInt(req.params.conversationId);
+      const conversationId = req.params.conversationId;
       
       // Find the conversation
       const conversations = await storage.getConversations(userId);

@@ -8,23 +8,23 @@ const MemoryStore = memorystore(session);
 // you might need
 export interface IStorage {
   // User methods
-  getUser(id: number): Promise<User | undefined>;
+  getUser(id: string): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
-  updateUserStatus(userId: number, isOnline: boolean): Promise<void>;
-  searchUsers(query: string, currentUserId: number): Promise<User[]>;
-  updateUser(userId: number, userData: Partial<User>): Promise<User>;
+  updateUserStatus(userId: string, isOnline: boolean): Promise<void>;
+  searchUsers(query: string, currentUserId: string): Promise<User[]>;
+  updateUser(userId: string, userData: Partial<User>): Promise<User>;
   
   // Message methods
-  getMessages(userId: number, otherUserId: number): Promise<Message[]>;
+  getMessages(userId: string, otherUserId: string): Promise<Message[]>;
   createMessage(message: InsertMessage): Promise<Message>;
-  markMessagesAsRead(userId: number, otherUserId: number): Promise<void>;
+  markMessagesAsRead(userId: string, otherUserId: string): Promise<void>;
   
   // Conversation methods
-  getConversations(userId: number): Promise<any[]>;
-  getConversation(user1Id: number, user2Id: number): Promise<Conversation | undefined>;
-  createOrUpdateConversation(userId: number, otherUserId: number, messageId: any): Promise<Conversation>;
+  getConversations(userId: string): Promise<any[]>;
+  getConversation(user1Id: string, user2Id: string): Promise<Conversation | undefined>;
+  createOrUpdateConversation(userId: string, otherUserId: string, messageId: any): Promise<Conversation>;
   
   // Session store
   sessionStore: any;
@@ -34,9 +34,9 @@ export interface IStorage {
 }
 
 export class MemStorage implements IStorage {
-  private users: Map<number, User>;
-  private messages: Map<number, Message>;
-  private conversations: Map<number, Conversation>;
+  private users: Map<string, User>;
+  private messages: Map<string, Message>;
+  private conversations: Map<string, Conversation>;
   sessionStore: any;
   
   currentUserId: number;
@@ -57,7 +57,7 @@ export class MemStorage implements IStorage {
   }
 
   // User methods
-  async getUser(id: number): Promise<User | undefined> {
+  async getUser(id: string): Promise<User | undefined> {
     return this.users.get(id);
   }
 
@@ -74,7 +74,8 @@ export class MemStorage implements IStorage {
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const id = this.currentUserId++;
+    const idNum = this.currentUserId++;
+    const id = idNum.toString();
     const now = new Date();
     const user: User = { 
       id,
@@ -91,7 +92,7 @@ export class MemStorage implements IStorage {
     return user;
   }
   
-  async updateUserStatus(userId: number, isOnline: boolean): Promise<void> {
+  async updateUserStatus(userId: string, isOnline: boolean): Promise<void> {
     const user = await this.getUser(userId);
     if (user) {
       user.isOnline = isOnline;
@@ -100,7 +101,7 @@ export class MemStorage implements IStorage {
     }
   }
 
-  async searchUsers(query: string, currentUserId: number): Promise<User[]> {
+  async searchUsers(query: string, currentUserId: string): Promise<User[]> {
     // Skip empty queries
     if (!query.trim()) return [];
     
@@ -119,7 +120,7 @@ export class MemStorage implements IStorage {
       .slice(0, 10);
   }
   
-  async updateUser(userId: number, userData: Partial<User>): Promise<User> {
+  async updateUser(userId: string, userData: Partial<User>): Promise<User> {
     const user = await this.getUser(userId);
     if (!user) {
       throw new Error('User not found');
@@ -139,7 +140,7 @@ export class MemStorage implements IStorage {
   }
   
   // Message methods
-  async getMessages(userId: number, otherUserId: number): Promise<Message[]> {
+  async getMessages(userId: string, otherUserId: string): Promise<Message[]> {
     return Array.from(this.messages.values())
       .filter(message => 
         (message.senderId === userId && message.receiverId === otherUserId) ||
@@ -149,7 +150,8 @@ export class MemStorage implements IStorage {
   }
   
   async createMessage(insertMessage: InsertMessage): Promise<Message> {
-    const id = this.currentMessageId++;
+    const idNum = this.currentMessageId++;
+    const id = idNum.toString();
     // Ensure senderId and receiverId are defined
     if (insertMessage.senderId === undefined || insertMessage.receiverId === undefined) {
       throw new Error('senderId and receiverId must be defined');
@@ -175,7 +177,7 @@ export class MemStorage implements IStorage {
     return message;
   }
   
-  async markMessagesAsRead(userId: number, otherUserId: number): Promise<void> {
+  async markMessagesAsRead(userId: string, otherUserId: string): Promise<void> {
     Array.from(this.messages.values())
       .filter(message => 
         message.senderId === otherUserId && 
@@ -189,7 +191,7 @@ export class MemStorage implements IStorage {
   }
   
   // Conversation methods
-  async getConversations(userId: number): Promise<any[]> {
+  async getConversations(userId: string): Promise<any[]> {
     // Get all conversations that this user is part of
     const userConversations = Array.from(this.conversations.values())
       .filter(conv => conv.user1Id === userId || conv.user2Id === userId);
@@ -229,7 +231,7 @@ export class MemStorage implements IStorage {
       .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
   }
   
-  async getConversation(user1Id: number, user2Id: number): Promise<Conversation | undefined> {
+  async getConversation(user1Id: string, user2Id: string): Promise<Conversation | undefined> {
     return Array.from(this.conversations.values()).find(
       conv => 
         (conv.user1Id === user1Id && conv.user2Id === user2Id) ||
@@ -237,7 +239,7 @@ export class MemStorage implements IStorage {
     );
   }
   
-  async createOrUpdateConversation(userId: number, otherUserId: number, messageId: number): Promise<Conversation> {
+  async createOrUpdateConversation(userId: string, otherUserId: string, messageId: string): Promise<Conversation> {
     // Ensure all parameters are defined
     if (userId === undefined || otherUserId === undefined || messageId === undefined) {
       throw new Error('userId, otherUserId, and messageId must be defined');
@@ -256,7 +258,8 @@ export class MemStorage implements IStorage {
       return updatedConversation;
     } else {
       // Create new conversation
-      const id = this.currentConversationId++;
+      const idNum = this.currentConversationId++;
+      const id = idNum.toString();
       const newConversation: Conversation = {
         id,
         user1Id: userId,

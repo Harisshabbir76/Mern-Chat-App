@@ -14,13 +14,14 @@ const userSchema = new mongoose.Schema({
 
 // Create virtual id field that maps to _id
 userSchema.virtual('id').get(function() {
-  return this._id;
+  return this._id.toString();
 });
 
 // Ensure virtual fields are serialized
 userSchema.set('toJSON', {
   virtuals: true,
   transform: (doc, ret) => {
+    ret.id = ret._id.toString();
     delete ret._id;
     delete ret.__v;
   }

@@ -15,9 +15,9 @@ interface ChatContextType {
   isLoadingMessages: boolean;
   sendMessage: (content: string) => void;
   setActiveConversation: (conv: ConversationWithUser) => void;
-  usersTyping: Record<number, boolean>;
+  usersTyping: Record<string, boolean>;
   setTypingStatus: (isTyping: boolean) => void;
-  onlineUsers: Set<number>;
+  onlineUsers: Set<string>;
 }
 
 export interface ConversationWithUser extends Conversation {
@@ -33,8 +33,8 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
   const [activeConversation, setActiveConversation] = useState<ConversationWithUser | null>(null);
   const [activeUser, setActiveUser] = useState<User | null>(null);
-  const [usersTyping, setUsersTyping] = useState<Record<number, boolean>>({});
-  const [onlineUsers, setOnlineUsers] = useState<Set<number>>(new Set());
+  const [usersTyping, setUsersTyping] = useState<Record<string, boolean>>({});
+  const [onlineUsers, setOnlineUsers] = useState<Set<string>>(new Set());
   
   const { socket, connected, sendMessage: sendWsMessage } = useWebSocket();
 
@@ -96,7 +96,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
 
   // Mark messages as read
   const markAsReadMutation = useMutation({
-    mutationFn: async (conversationId: number) => {
+    mutationFn: async (conversationId: string) => {
       if (!user || !activeUser) return;
       
       const res = await apiRequest("POST", `/api/messages/read/${conversationId}`, {
@@ -147,7 +147,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
             // New message received, update messages if it's for the current conversation
             if (activeUser?.id === data.senderId) {
               const newMessage: Message = {
-                id: 0, // Temp ID until we refresh
+                id: "temp-" + new Date().getTime(), // Temp ID until we refresh
                 content: data.content!,
                 senderId: data.senderId,
                 receiverId: data.receiverId,
@@ -201,7 +201,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       sendWsMessage({
         type: MessageType.STATUS,
         senderId: user.id,
-        receiverId: 0, // Broadcast to all users
+        receiverId: "0", // Broadcast to all users
         content: "online"
       });
     }
@@ -214,7 +214,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         sendWsMessage({
           type: MessageType.STATUS,
           senderId: user.id,
-          receiverId: 0, // Broadcast to all users
+          receiverId: "0", // Broadcast to all users
           content: "offline"
         });
       }
