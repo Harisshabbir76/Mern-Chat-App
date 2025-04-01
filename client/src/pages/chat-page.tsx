@@ -189,7 +189,7 @@ function ChatPageContent() {
                       <UserPlus className="h-5 w-5" />
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="sm:max-w-md p-0" onInteractOutside={() => setShowUserSearch(false)}>
+                  <DialogContent className="sm:max-w-md p-0">
                     <UserSearch onClose={() => setShowUserSearch(false)} />
                   </DialogContent>
                 </Dialog>
@@ -212,7 +212,7 @@ function ChatPageContent() {
                           <span>Profile</span>
                         </DropdownMenuItem>
                       </DialogTrigger>
-                      <DialogContent className="sm:max-w-md p-0" onInteractOutside={() => setShowUserProfile(false)}>
+                      <DialogContent className="sm:max-w-md p-0">
                         <UserProfile onClose={() => setShowUserProfile(false)} />
                       </DialogContent>
                     </Dialog>
