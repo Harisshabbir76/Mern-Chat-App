@@ -74,9 +74,23 @@ export default function AuthPage() {
 
   // Handle register submission
   const onRegisterSubmit = (data: RegisterFormValues) => {
-    console.log("Form data:", data); // Add debug logging
-    const { name, username, email, password } = data;
-    registerMutation.mutate({ name, username, email, password, avatar: null });
+    // Add detailed debug logging
+    console.log("Form data:", data);
+    console.log("Name:", data.name, "Type:", typeof data.name);
+    console.log("Username:", data.username, "Type:", typeof data.username);
+    console.log("Email:", data.email, "Type:", typeof data.email);
+    
+    // Make an explicit object to pass to the API
+    const userData = {
+      name: String(data.name),
+      username: String(data.username),
+      email: String(data.email),
+      password: String(data.password),
+      avatar: null
+    };
+    
+    console.log("Final data being sent:", userData);
+    registerMutation.mutate(userData);
   };
 
   // If user is already logged in, redirect to the chat page
@@ -97,35 +111,39 @@ export default function AuthPage() {
           </div>
 
           {isLogin ? (
-            <Form {...loginForm}>
+            <div>
               <form onSubmit={loginForm.handleSubmit(onLoginSubmit)} className="space-y-6">
-                <FormField
-                  control={loginForm.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Email address</FormLabel>
-                      <FormControl>
-                        <Input type="email" placeholder="Enter your email" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
+                <div className="space-y-2">
+                  <label htmlFor="login-email" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                    Email Address
+                  </label>
+                  <input
+                    id="login-email"
+                    type="email"
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    placeholder="Enter your email"
+                    {...loginForm.register("email")}
+                  />
+                  {loginForm.formState.errors.email && (
+                    <p className="text-sm font-medium text-destructive">{loginForm.formState.errors.email.message}</p>
                   )}
-                />
+                </div>
 
-                <FormField
-                  control={loginForm.control}
-                  name="password"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Password</FormLabel>
-                      <FormControl>
-                        <Input type="password" placeholder="Enter your password" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
+                <div className="space-y-2">
+                  <label htmlFor="login-password" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                    Password
+                  </label>
+                  <input
+                    id="login-password"
+                    type="password"
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    placeholder="Enter your password"
+                    {...loginForm.register("password")}
+                  />
+                  {loginForm.formState.errors.password && (
+                    <p className="text-sm font-medium text-destructive">{loginForm.formState.errors.password.message}</p>
                   )}
-                />
+                </div>
 
                 <Button 
                   type="submit" 
@@ -138,97 +156,89 @@ export default function AuthPage() {
                   Sign in
                 </Button>
               </form>
-            </Form>
+            </div>
           ) : (
-            <Form {...registerForm}>
+            <div>
               <form onSubmit={registerForm.handleSubmit(onRegisterSubmit)} className="space-y-5">
-                <FormField
-                  control={registerForm.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Full Name</FormLabel>
-                      <FormControl>
-                        <input 
-                          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                          type="text" 
-                          placeholder="Enter your full name" 
-                          name={field.name}
-                          value={field.value}
-                          onChange={field.onChange}
-                          onBlur={field.onBlur}
-                          ref={field.ref}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
+                <div className="space-y-2">
+                  <label htmlFor="register-name" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                    Full Name
+                  </label>
+                  <input
+                    id="register-name"
+                    type="text"
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    placeholder="Enter your full name"
+                    {...registerForm.register("name")}
+                  />
+                  {registerForm.formState.errors.name && (
+                    <p className="text-sm font-medium text-destructive">{registerForm.formState.errors.name.message}</p>
                   )}
-                />
+                </div>
                 
-                <FormField
-                  control={registerForm.control}
-                  name="username"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Username</FormLabel>
-                      <FormControl>
-                        <input 
-                          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                          type="text" 
-                          placeholder="Enter your username" 
-                          name={field.name}
-                          value={field.value}
-                          onChange={field.onChange}
-                          onBlur={field.onBlur}
-                          ref={field.ref}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
+                <div className="space-y-2">
+                  <label htmlFor="register-username" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                    Username
+                  </label>
+                  <input
+                    id="register-username"
+                    type="text"
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    placeholder="Enter your username"
+                    {...registerForm.register("username")}
+                  />
+                  {registerForm.formState.errors.username && (
+                    <p className="text-sm font-medium text-destructive">{registerForm.formState.errors.username.message}</p>
                   )}
-                />
+                </div>
 
-                <FormField
-                  control={registerForm.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Email address</FormLabel>
-                      <FormControl>
-                        <Input type="email" placeholder="Enter your email" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
+                <div className="space-y-2">
+                  <label htmlFor="register-email" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                    Email Address
+                  </label>
+                  <input
+                    id="register-email"
+                    type="email"
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    placeholder="Enter your email"
+                    {...registerForm.register("email")}
+                  />
+                  {registerForm.formState.errors.email && (
+                    <p className="text-sm font-medium text-destructive">{registerForm.formState.errors.email.message}</p>
                   )}
-                />
+                </div>
 
-                <FormField
-                  control={registerForm.control}
-                  name="password"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Password</FormLabel>
-                      <FormControl>
-                        <Input type="password" placeholder="Create a password" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
+                <div className="space-y-2">
+                  <label htmlFor="register-password" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                    Password
+                  </label>
+                  <input
+                    id="register-password"
+                    type="password"
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    placeholder="Create a password"
+                    {...registerForm.register("password")}
+                  />
+                  {registerForm.formState.errors.password && (
+                    <p className="text-sm font-medium text-destructive">{registerForm.formState.errors.password.message}</p>
                   )}
-                />
+                </div>
 
-                <FormField
-                  control={registerForm.control}
-                  name="confirmPassword"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Confirm Password</FormLabel>
-                      <FormControl>
-                        <Input type="password" placeholder="Confirm your password" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
+                <div className="space-y-2">
+                  <label htmlFor="register-confirm-password" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                    Confirm Password
+                  </label>
+                  <input
+                    id="register-confirm-password"
+                    type="password"
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    placeholder="Confirm your password"
+                    {...registerForm.register("confirmPassword")}
+                  />
+                  {registerForm.formState.errors.confirmPassword && (
+                    <p className="text-sm font-medium text-destructive">{registerForm.formState.errors.confirmPassword.message}</p>
                   )}
-                />
+                </div>
 
                 <Button 
                   type="submit" 
@@ -241,7 +251,7 @@ export default function AuthPage() {
                   Create Account
                 </Button>
               </form>
-            </Form>
+            </div>
           )}
 
           <div className="mt-6 text-center">
