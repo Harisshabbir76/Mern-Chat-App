@@ -39,12 +39,38 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   const [onlineUsers, setOnlineUsers] = useState<Set<string>>(new Set());
   
   const { socket, connected, sendMessage: sendWsMessage } = useWebSocket();
+  
+  // Load last active conversation from localStorage on initial load
+  useEffect(() => {
+    if (user && !activeConversation) {
+      const savedConversationId = localStorage.getItem('activeConversationId');
+      if (savedConversationId) {
+        // We'll set this later when conversations are loaded
+        console.log('Found saved conversation ID:', savedConversationId);
+      }
+    }
+  }, [user, activeConversation]);
 
   // Fetch all conversations
   const { data: conversations, isLoading: isLoadingConversations } = useQuery<ConversationWithUser[]>({
     queryKey: ['/api/conversations'],
-    enabled: !!user,
+    enabled: !!user
   });
+  
+  // Effect to handle restoring the saved conversation
+  useEffect(() => {
+    if (conversations && conversations.length > 0 && !activeConversation) {
+      const savedConversationId = localStorage.getItem('activeConversationId');
+      if (savedConversationId) {
+        // Find the saved conversation in the loaded conversations
+        const savedConv = conversations.find(conv => conv.id === savedConversationId);
+        if (savedConv) {
+          // Restore the saved conversation
+          handleSetActiveConversation(savedConv);
+        }
+      }
+    }
+  }, [conversations, activeConversation, handleSetActiveConversation]);
 
   // Fetch messages for current active conversation
   const { data: messages = [], isLoading: isLoadingMessages } = useQuery<Message[]>({
@@ -117,6 +143,9 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   const handleSetActiveConversation = useCallback((conv: ConversationWithUser) => {
     setActiveConversation(conv);
     setActiveUser(conv.otherUser);
+    
+    // Save the conversation ID to localStorage for persistence between refreshes
+    localStorage.setItem('activeConversationId', conv.id);
     
     // Mark messages as read when opening a conversation
     if (conv.unreadCount > 0) {

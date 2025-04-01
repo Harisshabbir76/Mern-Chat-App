@@ -1,10 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { User } from '@shared/schema';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { AvatarWithStatus } from '@/components/ui/avatar-with-status';
-import { Loader2, Check, X } from 'lucide-react';
+import { Loader2, Check, X, Camera, Image } from 'lucide-react';
 import { useMutation } from '@tanstack/react-query';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
@@ -37,7 +37,9 @@ type ProfileFormValues = z.infer<typeof profileSchema>;
 export function UserProfile({ onClose }: UserProfileProps) {
   const { user, logoutMutation } = useAuth();
   const { toast } = useToast();
-  
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(user?.avatar || null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const { register, handleSubmit, formState: { errors }, reset } = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
@@ -58,8 +60,31 @@ export function UserProfile({ onClose }: UserProfileProps) {
         password: '',
         confirmPassword: '',
       });
+      setAvatarUrl(user.avatar);
     }
   }, [user, reset]);
+  
+  const handleAvatarClick = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
+  
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // For simplicity, we'll use a service like UI Avatars if we can't upload
+      // In a real app, you'd upload the file to a server and get a URL back
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        if (event.target?.result) {
+          const newAvatarUrl = event.target.result.toString();
+          setAvatarUrl(newAvatarUrl);
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
   
   const updateProfileMutation = useMutation({
     mutationFn: async (data: Partial<User>) => {
@@ -89,6 +114,7 @@ export function UserProfile({ onClose }: UserProfileProps) {
       name: data.name,
       username: data.username,
       email: data.email,
+      avatar: avatarUrl,
     };
     
     // Only include password if provided
@@ -109,15 +135,28 @@ export function UserProfile({ onClose }: UserProfileProps) {
       </div>
       
       <div className="flex flex-col items-center mb-6">
-        <AvatarWithStatus
-          src={user?.avatar}
-          name={user?.name || 'User'}
-          size="lg"
-          isOnline={true}
-          className="mb-3"
-        />
+        <div className="relative group cursor-pointer" onClick={handleAvatarClick}>
+          <AvatarWithStatus
+            src={avatarUrl}
+            name={user?.name || 'User'}
+            size="lg"
+            isOnline={true}
+            className="mb-3"
+          />
+          <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+            <Camera className="h-6 w-6 text-white" />
+          </div>
+          <input
+            type="file"
+            ref={fileInputRef}
+            className="hidden"
+            accept="image/*"
+            onChange={handleAvatarChange}
+          />
+        </div>
         <h3 className="font-medium text-gray-900">{user?.name}</h3>
         <p className="text-sm text-gray-500">{user?.email}</p>
+        <p className="text-xs text-gray-400 mt-1">Click on avatar to change</p>
       </div>
       
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -14,7 +14,8 @@ import {
 import { Input } from '@/components/ui/input';
 import { useAuth } from '@/hooks/use-auth';
 import { Redirect } from 'wouter';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Camera, User } from 'lucide-react';
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 // Login form schema
 const loginSchema = z.object({
@@ -42,7 +43,28 @@ type RegisterFormValues = z.infer<typeof registerSchema>;
 
 export default function AuthPage() {
   const [isLogin, setIsLogin] = useState(true);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { user, loginMutation, registerMutation } = useAuth();
+  
+  const handleAvatarClick = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
+  
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        if (event.target?.result) {
+          setAvatarUrl(event.target.result.toString());
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   // Login form
   const loginForm = useForm<LoginFormValues>({
@@ -84,7 +106,7 @@ export default function AuthPage() {
       username: String(data.username),
       email: String(data.email),
       password: String(data.password),
-      avatar: null
+      avatar: avatarUrl
     };
     
     console.log("Final data being sent:", userData);
@@ -158,6 +180,31 @@ export default function AuthPage() {
           ) : (
             <div>
               <form onSubmit={registerForm.handleSubmit(onRegisterSubmit)} className="space-y-5">
+                <div className="flex flex-col items-center mb-4">
+                  <div className="relative group cursor-pointer" onClick={handleAvatarClick}>
+                    <Avatar className="h-24 w-24 border-2 border-primary/20">
+                      {avatarUrl ? (
+                        <AvatarImage src={avatarUrl} alt="Profile" />
+                      ) : (
+                        <AvatarFallback className="bg-primary/10 text-primary">
+                          <User className="h-12 w-12" />
+                        </AvatarFallback>
+                      )}
+                    </Avatar>
+                    <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Camera className="h-8 w-8 text-white" />
+                    </div>
+                    <input
+                      type="file"
+                      ref={fileInputRef}
+                      className="hidden"
+                      accept="image/*"
+                      onChange={handleAvatarChange}
+                    />
+                  </div>
+                  <p className="text-xs text-gray-500 mt-2">Click to add profile photo</p>
+                </div>
+                
                 <div className="space-y-2">
                   <label htmlFor="register-name" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
                     Full Name
@@ -268,7 +315,7 @@ export default function AuthPage() {
         </div>
 
         {/* Hero Section */}
-        <div className="hidden md:block bg-gradient-to-br from-primary-600 to-primary-800 p-12 text-white flex flex-col justify-center">
+        <div className="hidden md:block bg-gradient-to-br from-primary to-primary/80 p-12 text-white flex flex-col justify-center">
           <h2 className="text-4xl font-bold mb-6">Welcome to ChatConnect</h2>
           <p className="text-lg mb-8">
             A modern messaging platform that helps you stay connected with friends, family, and colleagues.
@@ -291,6 +338,18 @@ export default function AuthPage() {
                 <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"></path>
               </svg>
               Works on all your devices
+            </li>
+            <li className="flex items-center">
+              <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"></path>
+              </svg>
+              Share images and videos
+            </li>
+            <li className="flex items-center">
+              <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"></path>
+              </svg>
+              Custom profile avatars
             </li>
           </ul>
         </div>
