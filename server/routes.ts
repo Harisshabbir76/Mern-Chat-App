@@ -114,5 +114,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Search users by username or email
+  app.get("/api/users/search", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.user!.id;
+      const query = req.query.q as string;
+      
+      if (!query) {
+        return res.status(400).send("Missing search query");
+      }
+      
+      const users = await storage.searchUsers(query, userId);
+      res.json(users);
+    } catch (error) {
+      console.error("Error searching users:", error);
+      res.status(500).send("Server error");
+    }
+  });
+
+  // Update user profile
+  app.patch("/api/user/profile", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.user!.id;
+      const userData = req.body;
+      
+      // Prevent updating critical fields
+      delete userData.id;
+      delete userData.createdAt;
+      
+      // If updating username, check if it's already taken
+      if (userData.username) {
+        const existingUser = await storage.getUserByUsername(userData.username);
+        if (existingUser && existingUser.id !== userId) {
+          return res.status(400).json({ message: "Username already taken" });
+        }
+      }
+      
+      // If updating email, check if it's already taken
+      if (userData.email) {
+        const existingUser = await storage.getUserByEmail(userData.email);
+        if (existingUser && existingUser.id !== userId) {
+          return res.status(400).json({ message: "Email already taken" });
+        }
+      }
+      
+      const updatedUser = await storage.updateUser(userId, userData);
+      
+      // Don't return password
+      const { password, ...userWithoutPassword } = updatedUser;
+      res.json(userWithoutPassword);
+    } catch (error) {
+      console.error("Error updating user profile:", error);
+      res.status(500).send("Server error");
+    }
+  });
+
   return httpServer;
 }

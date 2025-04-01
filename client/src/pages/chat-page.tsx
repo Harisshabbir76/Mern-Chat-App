@@ -2,6 +2,8 @@ import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { ChatProvider, useChat } from '@/hooks/use-chat';
 import { AvatarWithStatus } from '@/components/ui/avatar-with-status';
+import { UserProfile } from '@/components/user-profile';
+import { UserSearch } from '@/components/user-search';
 import { 
   Search, 
   Settings, 
@@ -10,7 +12,13 @@ import {
   Video, 
   Info, 
   Paperclip, 
-  Send
+  Send,
+  ChevronDown,
+  Menu,
+  X,
+  UserPlus,
+  LogOut,
+  User as UserIcon,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -20,17 +28,30 @@ import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 function ChatPageContent() {
   const { user, logoutMutation } = useAuth();
   const isMobile = useIsMobile();
-  const [showConversations, setShowConversations] = useState(!isMobile);
-  const [showChat, setShowChat] = useState(!isMobile);
+  const [showConversations, setShowConversations] = useState(true);
+  const [showChat, setShowChat] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const messageListRef = useRef<HTMLDivElement>(null);
   const messageInputRef = useRef<HTMLInputElement>(null);
   const [messageInput, setMessageInput] = useState('');
   const typingTimeoutRef = useRef<number | null>(null);
+  const [showUserProfile, setShowUserProfile] = useState(false);
+  const [showUserSearch, setShowUserSearch] = useState(false);
   
   const { 
     conversations, 
@@ -48,16 +69,23 @@ function ChatPageContent() {
 
   // Filter conversations by search query
   const filteredConversations = conversations?.filter(conv => 
-    conv.otherUser.username.toLowerCase().includes(searchQuery.toLowerCase())
+    conv.otherUser.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    conv.otherUser.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
   
   // Handle conversation selection
   const handleConversationSelect = (conversation: any) => {
+    // If already active, toggle chat visibility
+    if (activeConversation?.id === conversation.id) {
+      setShowChat(!showChat);
+      return;
+    }
+    
     setActiveConversation(conversation);
+    setShowChat(true);
     
     if (isMobile) {
       setShowConversations(false);
-      setShowChat(true);
     }
   };
   
@@ -111,55 +139,88 @@ function ChatPageContent() {
   
   // Focus input when conversation changes
   useEffect(() => {
-    if (messageInputRef.current && !isMobile) {
+    if (messageInputRef.current && showChat && !isMobile) {
       messageInputRef.current.focus();
     }
-  }, [activeConversation, isMobile]);
+  }, [activeConversation, showChat, isMobile]);
   
   // Set layout on mobile/desktop change
   useEffect(() => {
     if (isMobile) {
-      setShowConversations(true);
-      setShowChat(!activeConversation);
+      setShowConversations(!showChat);
     } else {
       setShowConversations(true);
-      setShowChat(true);
     }
-  }, [isMobile, activeConversation]);
+  }, [isMobile, showChat]);
 
   return (
-    <div className="h-screen flex flex-col">
+    <div className="h-screen flex flex-col bg-gray-100">
       <div className="flex flex-1 overflow-hidden">
         {/* Sidebar / Conversation List */}
         {showConversations && (
-          <div className="w-full md:w-80 bg-white border-r border-gray-200 flex flex-col z-10">
+          <div className={cn(
+            "bg-white border-r border-gray-200 flex flex-col z-10",
+            isMobile ? "w-full" : "w-[350px]"
+          )}>
             {/* User Profile Header */}
-            <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+            <div className="p-4 border-b border-gray-200 flex items-center justify-between bg-primary/5">
               <div className="flex items-center">
                 <AvatarWithStatus 
                   src={user?.avatar}
-                  name={user?.username || "User"}
+                  name={user?.name || "User"}
                   size="md"
                   isOnline={true}
                   className="mr-3"
                 />
                 <div>
-                  <p className="font-medium text-gray-900">{user?.username}</p>
-                  <div className="flex items-center">
-                    <span className="w-2 h-2 bg-emerald-500 rounded-full mr-2"></span>
-                    <span className="text-xs text-gray-500">Online</span>
-                  </div>
+                  <p className="font-medium text-gray-900">{user?.name}</p>
+                  <p className="text-xs text-gray-500">@{user?.username}</p>
                 </div>
               </div>
-              <div className="flex gap-2">
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  onClick={() => logoutMutation.mutate()}
-                  className="text-gray-500 hover:text-gray-700"
-                >
-                  <Settings className="h-5 w-5" />
-                </Button>
+              <div className="flex gap-1">
+                <Dialog open={showUserSearch} onOpenChange={setShowUserSearch}>
+                  <DialogTrigger asChild>
+                    <Button 
+                      variant="ghost" 
+                      size="icon"
+                      className="text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+                    >
+                      <UserPlus className="h-5 w-5" />
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-md p-0" onInteractOutside={() => setShowUserSearch(false)}>
+                    <UserSearch onClose={() => setShowUserSearch(false)} />
+                  </DialogContent>
+                </Dialog>
+                
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button 
+                      variant="ghost" 
+                      size="icon"
+                      className="text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+                    >
+                      <Menu className="h-5 w-5" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56">
+                    <Dialog open={showUserProfile} onOpenChange={setShowUserProfile}>
+                      <DialogTrigger asChild>
+                        <DropdownMenuItem>
+                          <UserIcon className="h-4 w-4 mr-2" />
+                          <span>Profile</span>
+                        </DropdownMenuItem>
+                      </DialogTrigger>
+                      <DialogContent className="sm:max-w-md p-0" onInteractOutside={() => setShowUserProfile(false)}>
+                        <UserProfile onClose={() => setShowUserProfile(false)} />
+                      </DialogContent>
+                    </Dialog>
+                    <DropdownMenuItem onClick={() => logoutMutation.mutate()}>
+                      <LogOut className="h-4 w-4 mr-2" />
+                      <span>Logout</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             </div>
             
@@ -191,8 +252,16 @@ function ChatPageContent() {
                   </div>
                 ))
               ) : filteredConversations?.length === 0 ? (
-                <div className="p-4 text-center text-gray-500">
-                  No conversations found
+                <div className="p-8 text-center text-gray-500">
+                  <p className="mb-4">No conversations found</p>
+                  <Button 
+                    variant="outline" 
+                    className="mx-auto"
+                    onClick={() => setShowUserSearch(true)}
+                  >
+                    <UserPlus className="h-4 w-4 mr-2" />
+                    Find Users
+                  </Button>
                 </div>
               ) : (
                 filteredConversations?.map((conversation) => (
@@ -200,14 +269,14 @@ function ChatPageContent() {
                     key={conversation.id}
                     className={cn(
                       "p-4 border-b border-gray-200 flex items-center cursor-pointer hover:bg-gray-50",
-                      activeConversation?.id === conversation.id && "bg-indigo-50"
+                      activeConversation?.id === conversation.id && showChat && "bg-primary/10"
                     )}
                     onClick={() => handleConversationSelect(conversation)}
                   >
                     <div className="relative mr-3">
                       <AvatarWithStatus
                         src={conversation.otherUser.avatar}
-                        name={conversation.otherUser.username}
+                        name={conversation.otherUser.name}
                         size="lg"
                         isOnline={onlineUsers.has(conversation.otherUser.id)}
                       />
@@ -215,7 +284,7 @@ function ChatPageContent() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between">
                         <h3 className="text-sm font-medium text-gray-900 truncate">
-                          {conversation.otherUser.username}
+                          {conversation.otherUser.name}
                         </h3>
                         <span className="text-xs text-gray-500">
                           {conversation.lastMessage && format(new Date(conversation.lastMessage.timestamp), 'h:mm a')}
@@ -239,28 +308,33 @@ function ChatPageContent() {
         
         {/* Chat Main Content */}
         {showChat && (
-          <div className="hidden md:flex flex-1 flex-col bg-gray-50">
+          <div className={cn(
+            "bg-gray-50 flex flex-col",
+            isMobile ? "w-full absolute inset-0" : "flex-1"
+          )}>
             {activeConversation ? (
               <>
                 {/* Chat Header */}
                 <div className="p-4 border-b border-gray-200 bg-white flex items-center justify-between">
                   <div className="flex items-center">
-                    <button 
-                      onClick={handleBackToConversations} 
-                      className="md:hidden text-gray-500 mr-3"
-                    >
-                      <ArrowLeft className="h-5 w-5" />
-                    </button>
+                    {isMobile && (
+                      <button 
+                        onClick={handleBackToConversations} 
+                        className="text-gray-500 mr-3"
+                      >
+                        <ArrowLeft className="h-5 w-5" />
+                      </button>
+                    )}
                     <AvatarWithStatus
                       src={activeUser?.avatar}
-                      name={activeUser?.username || ""}
+                      name={activeUser?.name || ""}
                       size="md"
                       isOnline={activeUser ? onlineUsers.has(activeUser.id) : false}
                       className="mr-3"
                     />
                     <div>
                       <p className="font-medium text-gray-900">
-                        {activeUser?.username}
+                        {activeUser?.name}
                       </p>
                       <div className="flex items-center">
                         <span className={cn(
@@ -275,28 +349,31 @@ function ChatPageContent() {
                       </div>
                     </div>
                   </div>
-                  <div className="flex space-x-3">
+                  <div className="flex space-x-2">
                     <Button 
                       variant="ghost" 
                       size="icon"
-                      className="text-gray-500 hover:text-gray-700"
+                      className="text-gray-500 hover:text-gray-700 hidden md:flex"
                     >
                       <Phone className="h-5 w-5" />
                     </Button>
                     <Button 
                       variant="ghost" 
                       size="icon"
-                      className="text-gray-500 hover:text-gray-700"
+                      className="text-gray-500 hover:text-gray-700 hidden md:flex"
                     >
                       <Video className="h-5 w-5" />
                     </Button>
-                    <Button 
-                      variant="ghost" 
-                      size="icon"
-                      className="text-gray-500 hover:text-gray-700"
-                    >
-                      <Info className="h-5 w-5" />
-                    </Button>
+                    {!isMobile && (
+                      <Button 
+                        variant="ghost" 
+                        size="icon"
+                        className="text-gray-500 hover:text-gray-700"
+                        onClick={() => setShowChat(false)}
+                      >
+                        <X className="h-5 w-5" />
+                      </Button>
+                    )}
                   </div>
                 </div>
                 
@@ -304,6 +381,7 @@ function ChatPageContent() {
                 <div 
                   ref={messageListRef}
                   className="flex-1 p-4 overflow-y-auto"
+                  style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg width=\'100\' height=\'100\' viewBox=\'0 0 100 100\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cpath d=\'M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z\' fill=\'%23e5e7eb\' fill-opacity=\'0.3\' fill-rule=\'evenodd\'/%3E%3C/svg%3E")' }}
                 >
                   {/* Date Separator */}
                   <div className="flex justify-center mb-4">
@@ -338,28 +416,38 @@ function ChatPageContent() {
                           {!isSent && (
                             <AvatarWithStatus
                               src={activeUser?.avatar}
-                              name={activeUser?.username || ""}
+                              name={activeUser?.name || ""}
                               size="sm"
                               className="mr-2 self-end"
                             />
                           )}
                           <div 
                             className={cn(
-                              "py-2 px-4 max-w-[80%] rounded-lg",
+                              "py-2 px-4 max-w-[80%] rounded-lg shadow-sm",
                               isSent 
-                                ? "bg-primary text-white" 
-                                : "bg-white shadow-sm"
+                                ? "bg-primary text-white rounded-tr-none" 
+                                : "bg-white rounded-tl-none"
                             )}
                           >
                             <p>{message.content}</p>
-                            <p 
-                              className={cn(
-                                "text-xs text-right mt-1",
-                                isSent ? "text-primary-200" : "text-gray-500"
+                            <div className="flex items-center justify-end mt-1 gap-1">
+                              <p 
+                                className={cn(
+                                  "text-xs",
+                                  isSent ? "text-primary-100" : "text-gray-500"
+                                )}
+                              >
+                                {format(new Date(message.timestamp), 'h:mm a')}
+                              </p>
+                              {isSent && (
+                                <span className={cn(
+                                  "text-xs",
+                                  message.read ? "text-blue-400" : "text-primary-100"
+                                )}>
+                                  {message.read ? "✓✓" : "✓"}
+                                </span>
                               )}
-                            >
-                              {format(new Date(message.timestamp), 'h:mm a')}
-                            </p>
+                            </div>
                           </div>
                         </div>
                       );
@@ -371,7 +459,7 @@ function ChatPageContent() {
                     <div className="flex mb-4">
                       <AvatarWithStatus
                         src={activeUser.avatar}
-                        name={activeUser.username}
+                        name={activeUser.name}
                         size="sm"
                         className="mr-2 self-end"
                       />
@@ -400,15 +488,14 @@ function ChatPageContent() {
                     <Input
                       ref={messageInputRef}
                       type="text"
-                      placeholder="Type a message..."
                       value={messageInput}
                       onChange={handleMessageInputChange}
-                      className="flex-1 rounded-full px-4 py-2"
+                      placeholder="Type a message..."
+                      className="flex-1 rounded-full"
                     />
                     <Button 
                       type="submit" 
-                      size="icon"
-                      className="ml-2 bg-primary text-white rounded-full hover:bg-primary/90"
+                      className="ml-2 rounded-full aspect-square"
                       disabled={!messageInput.trim()}
                     >
                       <Send className="h-5 w-5" />
@@ -418,18 +505,49 @@ function ChatPageContent() {
               </>
             ) : (
               // No conversation selected
-              <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
-                <div className="bg-primary/10 rounded-full p-6 mb-4">
-                  <svg className="w-12 h-12 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
-                  </svg>
+              <div className="flex flex-col items-center justify-center h-full">
+                <div className="text-center max-w-md p-8">
+                  <div className="bg-primary/10 p-4 rounded-full inline-block mb-4">
+                    <MessageSquare className="h-12 w-12 text-primary" />
+                  </div>
+                  <h2 className="text-2xl font-bold mb-2">Select a conversation</h2>
+                  <p className="text-gray-500 mb-6">
+                    Choose a conversation from the list or start a new one by clicking the "Find Users" button.
+                  </p>
+                  <Button 
+                    variant="outline" 
+                    className="mx-auto"
+                    onClick={() => setShowUserSearch(true)}
+                  >
+                    <UserPlus className="h-4 w-4 mr-2" />
+                    Find Users
+                  </Button>
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-2">Start a conversation</h3>
-                <p className="text-gray-500 max-w-md">
-                  Select a user from the sidebar to start chatting, or search for a specific person.
-                </p>
               </div>
             )}
+          </div>
+        )}
+        
+        {/* Empty state for desktop when no chat is selected */}
+        {!showChat && !isMobile && (
+          <div className="flex-1 bg-gray-50 flex items-center justify-center">
+            <div className="text-center max-w-md p-8">
+              <div className="bg-primary/10 p-4 rounded-full inline-block mb-4">
+                <MessageSquare className="h-12 w-12 text-primary" />
+              </div>
+              <h2 className="text-2xl font-bold mb-2">Select a conversation</h2>
+              <p className="text-gray-500 mb-6">
+                Choose a conversation from the list or start a new one.
+              </p>
+              <Button 
+                variant="outline" 
+                className="mx-auto"
+                onClick={() => setShowUserSearch(true)}
+              >
+                <UserPlus className="h-4 w-4 mr-2" />
+                Find Users
+              </Button>
+            </div>
           </div>
         )}
       </div>

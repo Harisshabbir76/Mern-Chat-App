@@ -13,6 +13,8 @@ export interface IStorage {
   getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   updateUserStatus(userId: number, isOnline: boolean): Promise<void>;
+  searchUsers(query: string, currentUserId: number): Promise<User[]>;
+  updateUser(userId: number, userData: Partial<User>): Promise<User>;
   
   // Message methods
   getMessages(userId: number, otherUserId: number): Promise<Message[]>;
@@ -93,6 +95,44 @@ export class MemStorage implements IStorage {
       user.lastActive = new Date();
       this.users.set(userId, user);
     }
+  }
+
+  async searchUsers(query: string, currentUserId: number): Promise<User[]> {
+    // Skip empty queries
+    if (!query.trim()) return [];
+    
+    const lowerQuery = query.toLowerCase().trim();
+    
+    return Array.from(this.users.values())
+      .filter(user => 
+        // Exclude current user
+        user.id !== currentUserId && 
+        // Match username or email
+        (user.username.toLowerCase().includes(lowerQuery) || 
+         user.email.toLowerCase().includes(lowerQuery) ||
+         user.name.toLowerCase().includes(lowerQuery))
+      )
+      // Limit to 10 results
+      .slice(0, 10);
+  }
+  
+  async updateUser(userId: number, userData: Partial<User>): Promise<User> {
+    const user = await this.getUser(userId);
+    if (!user) {
+      throw new Error('User not found');
+    }
+    
+    // Update fields
+    const updatedUser: User = {
+      ...user,
+      ...userData,
+      // Prevent overriding these fields
+      id: user.id,
+      createdAt: user.createdAt,
+    };
+    
+    this.users.set(userId, updatedUser);
+    return updatedUser;
   }
   
   // Message methods
