@@ -1,0 +1,255 @@
+import { createContext, ReactNode, useContext, useState, useEffect, useCallback } from "react";
+import { useAuth } from "./use-auth";
+import { useWebSocket } from "@/lib/websocket";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { Message, User, Conversation, MessageType, WebSocketMessage } from "@shared/schema";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+
+interface ChatContextType {
+  conversations: ConversationWithUser[] | undefined;
+  isLoadingConversations: boolean;
+  activeConversation: ConversationWithUser | null;
+  activeUser: User | null;
+  messages: Message[];
+  isLoadingMessages: boolean;
+  sendMessage: (content: string) => void;
+  setActiveConversation: (conv: ConversationWithUser) => void;
+  usersTyping: Record<number, boolean>;
+  setTypingStatus: (isTyping: boolean) => void;
+  onlineUsers: Set<number>;
+}
+
+export interface ConversationWithUser extends Conversation {
+  otherUser: User;
+  lastMessage?: Message;
+  unreadCount: number;
+}
+
+const ChatContext = createContext<ChatContextType | null>(null);
+
+export function ChatProvider({ children }: { children: ReactNode }) {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [activeConversation, setActiveConversation] = useState<ConversationWithUser | null>(null);
+  const [activeUser, setActiveUser] = useState<User | null>(null);
+  const [usersTyping, setUsersTyping] = useState<Record<number, boolean>>({});
+  const [onlineUsers, setOnlineUsers] = useState<Set<number>>(new Set());
+  
+  const { socket, connected, sendMessage: sendWsMessage } = useWebSocket();
+
+  // Fetch all conversations
+  const { data: conversations, isLoading: isLoadingConversations } = useQuery<ConversationWithUser[]>({
+    queryKey: ['/api/conversations'],
+    enabled: !!user,
+  });
+
+  // Fetch messages for current active conversation
+  const { data: messages = [], isLoading: isLoadingMessages } = useQuery<Message[]>({
+    queryKey: ['/api/messages', activeConversation?.id],
+    enabled: !!activeConversation,
+  });
+
+  // Send a new message
+  const sendMessageMutation = useMutation({
+    mutationFn: async (content: string) => {
+      if (!user || !activeConversation || !activeUser) {
+        throw new Error("Cannot send message - missing user or conversation");
+      }
+      
+      const messageData = {
+        content,
+        senderId: user.id,
+        receiverId: activeUser.id,
+      };
+      
+      const res = await apiRequest("POST", "/api/messages", messageData);
+      return res.json();
+    },
+    onSuccess: (newMessage: Message) => {
+      // Update messages in the current conversation
+      queryClient.setQueryData(['/api/messages', activeConversation?.id], 
+        (old: Message[] = []) => [...old, newMessage]);
+      
+      // Also update conversations list to move this to the top
+      queryClient.invalidateQueries({ queryKey: ['/api/conversations'] });
+      
+      // Send the message via WebSocket as well
+      if (connected && activeUser) {
+        sendWsMessage({
+          type: MessageType.TEXT,
+          senderId: user!.id,
+          receiverId: activeUser.id,
+          content: newMessage.content,
+          timestamp: new Date().toISOString(),
+        });
+      }
+    },
+    onError: (error) => {
+      toast({
+        title: "Failed to send message",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  });
+
+  // Mark messages as read
+  const markAsReadMutation = useMutation({
+    mutationFn: async (conversationId: number) => {
+      if (!user || !activeUser) return;
+      
+      const res = await apiRequest("POST", `/api/messages/read/${conversationId}`, {
+        userId: user.id,
+        otherUserId: activeUser.id,
+      });
+      return res.json();
+    },
+    onSuccess: () => {
+      // Update unread count in conversations
+      queryClient.invalidateQueries({ queryKey: ['/api/conversations'] });
+    }
+  });
+
+  // Handle setting active conversation and user
+  const handleSetActiveConversation = useCallback((conv: ConversationWithUser) => {
+    setActiveConversation(conv);
+    setActiveUser(conv.otherUser);
+    
+    // Mark messages as read when opening a conversation
+    if (conv.unreadCount > 0) {
+      markAsReadMutation.mutate(conv.id);
+    }
+  }, [markAsReadMutation]);
+
+  // Send a typing indicator
+  const setTypingStatus = useCallback((isTyping: boolean) => {
+    if (!connected || !user || !activeUser) return;
+    
+    sendWsMessage({
+      type: MessageType.TYPING,
+      senderId: user.id,
+      receiverId: activeUser.id,
+      content: isTyping ? "typing" : "stopped_typing"
+    });
+  }, [connected, user, activeUser, sendWsMessage]);
+
+  // Handle WebSocket messages
+  useEffect(() => {
+    if (!socket || !user) return;
+
+    const handleMessage = (event: MessageEvent) => {
+      try {
+        const data: WebSocketMessage = JSON.parse(event.data);
+        
+        switch (data.type) {
+          case MessageType.TEXT:
+            // New message received, update messages if it's for the current conversation
+            if (activeUser?.id === data.senderId) {
+              const newMessage: Message = {
+                id: 0, // Temp ID until we refresh
+                content: data.content!,
+                senderId: data.senderId,
+                receiverId: data.receiverId,
+                timestamp: new Date(data.timestamp!),
+                read: true
+              };
+              
+              queryClient.setQueryData(
+                ['/api/messages', activeConversation?.id],
+                (old: Message[] = []) => [...old, newMessage]
+              );
+              
+              // Mark as read automatically since user is viewing this conversation
+              markAsReadMutation.mutate(activeConversation!.id);
+            }
+            
+            // Always update the conversations list when new message comes in
+            queryClient.invalidateQueries({ queryKey: ['/api/conversations'] });
+            break;
+            
+          case MessageType.TYPING:
+            // Update typing status
+            setUsersTyping(prev => ({
+              ...prev,
+              [data.senderId]: data.content === "typing"
+            }));
+            break;
+            
+          case MessageType.STATUS:
+            // Update online status
+            if (data.content === "online") {
+              setOnlineUsers(prev => new Set([...prev, data.senderId]));
+            } else if (data.content === "offline") {
+              setOnlineUsers(prev => {
+                const newSet = new Set(prev);
+                newSet.delete(data.senderId);
+                return newSet;
+              });
+            }
+            break;
+        }
+      } catch (err) {
+        console.error("Error parsing WebSocket message:", err);
+      }
+    };
+
+    socket.addEventListener("message", handleMessage);
+
+    // Send online status when connected
+    if (connected) {
+      sendWsMessage({
+        type: MessageType.STATUS,
+        senderId: user.id,
+        receiverId: 0, // Broadcast to all users
+        content: "online"
+      });
+    }
+
+    return () => {
+      socket.removeEventListener("message", handleMessage);
+      
+      // Send offline status when unmounting if still connected
+      if (connected && user) {
+        sendWsMessage({
+          type: MessageType.STATUS,
+          senderId: user.id,
+          receiverId: 0, // Broadcast to all users
+          content: "offline"
+        });
+      }
+    };
+  }, [socket, connected, user, activeUser, activeConversation, markAsReadMutation]);
+
+  // Function to send a message
+  const sendMessage = useCallback((content: string) => {
+    if (content.trim() === "") return;
+    sendMessageMutation.mutate(content);
+  }, [sendMessageMutation]);
+
+  return (
+    <ChatContext.Provider value={{
+      conversations,
+      isLoadingConversations,
+      activeConversation,
+      activeUser,
+      messages,
+      isLoadingMessages,
+      sendMessage,
+      setActiveConversation: handleSetActiveConversation,
+      usersTyping,
+      setTypingStatus,
+      onlineUsers
+    }}>
+      {children}
+    </ChatContext.Provider>
+  );
+}
+
+export function useChat() {
+  const context = useContext(ChatContext);
+  if (!context) {
+    throw new Error("useChat must be used within a ChatProvider");
+  }
+  return context;
+}
