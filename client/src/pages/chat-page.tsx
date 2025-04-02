@@ -50,6 +50,7 @@ function ChatPageContent() {
   const messageListRef = useRef<HTMLDivElement>(null);
   const messageInputRef = useRef<HTMLInputElement>(null);
   const [messageInput, setMessageInput] = useState('');
+  const [uploadingMedia, setUploadingMedia] = useState(false);
   const typingTimeoutRef = useRef<number | null>(null);
   const [showUserProfile, setShowUserProfile] = useState(false);
   const [showUserSearch, setShowUserSearch] = useState(false);
@@ -62,6 +63,8 @@ function ChatPageContent() {
     messages,
     isLoadingMessages,
     sendMessage,
+    sendImageMessage,
+    sendVideoMessage,
     setActiveConversation,
     usersTyping,
     setTypingStatus,
@@ -153,6 +156,63 @@ function ChatPageContent() {
       setShowConversations(true);
     }
   }, [isMobile, showChat]);
+  
+  // Handle image upload
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || !e.target.files[0]) return;
+    
+    setUploadingMedia(true);
+    const file = e.target.files[0];
+    const reader = new FileReader();
+    
+    reader.onload = (event) => {
+      if (!event.target || !event.target.result) return;
+      
+      const imageUrl = event.target.result as string;
+      const caption = prompt("Add a caption (optional):", "");
+      
+      sendImageMessage(imageUrl, caption || "");
+      setUploadingMedia(false);
+      
+      // Reset the file input
+      e.target.value = '';
+    };
+    
+    reader.readAsDataURL(file);
+  };
+  
+  // Handle video upload
+  const handleVideoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || !e.target.files[0]) return;
+    
+    setUploadingMedia(true);
+    const file = e.target.files[0];
+    
+    // Check file size (limit to 10MB for example)
+    if (file.size > 10 * 1024 * 1024) {
+      alert("Video file is too large. Please select a file under 10MB.");
+      setUploadingMedia(false);
+      e.target.value = '';
+      return;
+    }
+    
+    const reader = new FileReader();
+    
+    reader.onload = (event) => {
+      if (!event.target || !event.target.result) return;
+      
+      const videoUrl = event.target.result as string;
+      const caption = prompt("Add a caption (optional):", "");
+      
+      sendVideoMessage(videoUrl, caption || "");
+      setUploadingMedia(false);
+      
+      // Reset the file input
+      e.target.value = '';
+    };
+    
+    reader.readAsDataURL(file);
+  };
 
   return (
     <div className="h-screen flex flex-col bg-gray-100">
@@ -430,6 +490,23 @@ function ChatPageContent() {
                                 : "bg-white rounded-tl-none"
                             )}
                           >
+                            {message.messageType === 'image' && message.mediaUrl ? (
+                              <div className="mb-2">
+                                <img 
+                                  src={message.mediaUrl} 
+                                  alt={message.content || "Image"} 
+                                  className="max-w-full rounded-md"
+                                />
+                              </div>
+                            ) : message.messageType === 'video' && message.mediaUrl ? (
+                              <div className="mb-2">
+                                <video 
+                                  src={message.mediaUrl} 
+                                  controls
+                                  className="max-w-full rounded-md"
+                                />
+                              </div>
+                            ) : null}
                             <p>{message.content}</p>
                             <div className="flex items-center justify-end mt-1 gap-1">
                               <p 
@@ -478,14 +555,44 @@ function ChatPageContent() {
                 {/* Message Input */}
                 <div className="p-4 border-t border-gray-200 bg-white">
                   <form onSubmit={handleSendMessage} className="flex items-center">
-                    <Button 
-                      type="button" 
-                      variant="ghost" 
-                      size="icon"
-                      className="text-gray-500 mr-2"
-                    >
-                      <Paperclip className="h-5 w-5" />
-                    </Button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button 
+                          type="button" 
+                          variant="ghost" 
+                          size="icon"
+                          className="text-gray-500 mr-2"
+                        >
+                          <Paperclip className="h-5 w-5" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent>
+                        <DropdownMenuItem
+                          onClick={() => document.getElementById('image-upload')?.click()}
+                        >
+                          Image
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => document.getElementById('video-upload')?.click()}
+                        >
+                          Video
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                    <input 
+                      type="file" 
+                      id="image-upload" 
+                      className="hidden" 
+                      accept="image/*" 
+                      onChange={handleImageUpload} 
+                    />
+                    <input 
+                      type="file" 
+                      id="video-upload" 
+                      className="hidden" 
+                      accept="video/*" 
+                      onChange={handleVideoUpload} 
+                    />
                     <Input
                       ref={messageInputRef}
                       type="text"

@@ -59,7 +59,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
 
   // Fetch messages for current active conversation
   const { data: messages = [], isLoading: isLoadingMessages } = useQuery<Message[]>({
-    queryKey: ['/api/messages', activeConversation?.id],
+    queryKey: [`/api/messages/${activeConversation?.id}`],
     enabled: !!activeConversation,
   });
 
@@ -81,7 +81,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     },
     onSuccess: (newMessage: Message) => {
       // Update messages in the current conversation
-      queryClient.setQueryData(['/api/messages', activeConversation?.id], 
+      queryClient.setQueryData([`/api/messages/${activeConversation?.id}`], 
         (old: Message[] = []) => [...old, newMessage]);
       
       // Also update conversations list to move this to the top
@@ -191,7 +191,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
               };
               
               queryClient.setQueryData(
-                ['/api/messages', activeConversation?.id],
+                [`/api/messages/${activeConversation?.id}`],
                 (old: Message[] = []) => [...old, newMessage]
               );
               
@@ -216,10 +216,10 @@ export function ChatProvider({ children }: { children: ReactNode }) {
           case MessageType.STATUS:
             // Update online status
             if (data.content === "online") {
-              setOnlineUsers(prev => new Set([...prev, data.senderId]));
+              setOnlineUsers(prev => new Set([...Array.from(prev), data.senderId]));
             } else if (data.content === "offline") {
               setOnlineUsers(prev => {
-                const newSet = new Set(prev);
+                const newSet = new Set(Array.from(prev));
                 newSet.delete(data.senderId);
                 return newSet;
               });
@@ -287,7 +287,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       .then(res => res.json())
       .then((newMessage: Message) => {
         // Update messages in the current conversation
-        queryClient.setQueryData(['/api/messages', activeConversation?.id], 
+        queryClient.setQueryData([`/api/messages/${activeConversation?.id}`], 
           (old: Message[] = []) => [...old, newMessage]);
         
         // Also update conversations list to move this to the top
@@ -337,7 +337,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       .then(res => res.json())
       .then((newMessage: Message) => {
         // Update messages in the current conversation
-        queryClient.setQueryData(['/api/messages', activeConversation?.id], 
+        queryClient.setQueryData([`/api/messages/${activeConversation?.id}`], 
           (old: Message[] = []) => [...old, newMessage]);
         
         // Also update conversations list to move this to the top
