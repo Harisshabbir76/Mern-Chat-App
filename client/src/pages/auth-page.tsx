@@ -124,7 +124,7 @@ export default function AuthPage() {
         {/* Form Section */}
         <div className="p-8">
           <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-gray-800">ChatConnect</h1>
+            <h1 className="text-3xl font-bold text-gray-800">Rabta</h1>
             <p className="text-gray-600 mt-2">
               {isLogin ? 'Sign in to continue' : 'Create your account'}
             </p>
@@ -316,7 +316,7 @@ export default function AuthPage() {
 
         {/* Hero Section */}
         <div className="hidden md:block bg-gradient-to-br from-primary to-primary/80 p-12 text-white flex flex-col justify-center">
-          <h2 className="text-4xl font-bold mb-6">Welcome to ChatConnect</h2>
+          <h2 className="text-4xl font-bold mb-6">Welcome to Rabta</h2>
           <p className="text-lg mb-8">
             A modern messaging platform that helps you stay connected with friends, family, and colleagues.
           </p>
