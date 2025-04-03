@@ -476,6 +476,29 @@ function ChatPageContent() {
                     >
                       <Video className="h-5 w-5" />
                     </Button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className={`text-${isDarkMode ? "gray-300" : "gray-500"} hover:text-${isDarkMode ? "gray-200" : "gray-700"}`}
+                        >
+                          <Menu className="h-5 w-5" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem
+                          onClick={() => {
+                            if (window.confirm("Delete this entire conversation? This cannot be undone.")) {
+                              deleteConversationMutation.mutate(activeConversation.id);
+                            }
+                          }}
+                          className="text-destructive"
+                        >
+                          Delete Conversation
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                     {!isMobile && (
                       <Button
                         variant="ghost"
@@ -549,6 +572,31 @@ function ChatPageContent() {
                               size="sm"
                               className="mr-2 self-end"
                             />
+                          )}
+                          {isSent && (
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-6 w-6 p-0 hover:bg-transparent"
+                                >
+                                  <ChevronDown className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem
+                                  onClick={() => {
+                                    if (window.confirm("Delete this message?")) {
+                                      deleteMessageMutation.mutate(message.id);
+                                    }
+                                  }}
+                                  className="text-destructive"
+                                >
+                                  Delete Message
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
                           )}
                           <div
                             className={cn(

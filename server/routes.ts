@@ -114,6 +114,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Delete a message
+  app.delete("/api/messages/:messageId", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.user!.id;
+      const messageId = req.params.messageId;
+      
+      // Ensure message exists and belongs to user
+      const message = await storage.getMessage(messageId);
+      if (!message) {
+        return res.status(404).send("Message not found");
+      }
+      
+      if (message.senderId !== userId) {
+        return res.status(403).send("Not authorized to delete this message");
+      }
+      
+      await storage.deleteMessage(messageId);
+      res.status(200).json({ success: true });
+    } catch (error) {
+      console.error("Error deleting message:", error);
+      res.status(500).send("Server error");
+    }
+  });
+
+  // Delete a conversation
+  app.delete("/api/conversations/:conversationId", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.user!.id;
+      const conversationId = req.params.conversationId;
+      
+      // Ensure conversation exists and user is a participant
+      const conversation = await storage.getConversationById(conversationId);
+      if (!conversation) {
+        return res.status(404).send("Conversation not found");
+      }
+      
+      if (conversation.user1Id !== userId && conversation.user2Id !== userId) {
+        return res.status(403).send("Not authorized to delete this conversation");
+      }
+      
+      await storage.deleteConversation(conversationId);
+      res.status(200).json({ success: true });
+    } catch (error) {
+      console.error("Error deleting conversation:", error);
+      res.status(500).send("Server error");
+    }
+  });
+
   // Search users by username or email
   app.get("/api/users/search", isAuthenticated, async (req, res) => {
     try {

@@ -315,6 +315,46 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   }, [user, activeConversation, activeUser, connected, sendWsMessage, toast]);
   
   // Function to send a video message
+  // Delete a message
+  const deleteMessageMutation = useMutation({
+    mutationFn: async (messageId: string) => {
+      const res = await apiRequest("DELETE", `/api/messages/${messageId}`);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/messages/${activeConversation?.id}`] });
+      queryClient.invalidateQueries({ queryKey: ['/api/conversations'] });
+    },
+    onError: (error) => {
+      toast({
+        title: "Failed to delete message",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  });
+
+  // Delete a conversation
+  const deleteConversationMutation = useMutation({
+    mutationFn: async (conversationId: string) => {
+      const res = await apiRequest("DELETE", `/api/conversations/${conversationId}`);
+      return res.json();
+    },
+    onSuccess: () => {
+      setActiveConversation(null);
+      setActiveUser(null);
+      localStorage.removeItem('activeConversationId');
+      queryClient.invalidateQueries({ queryKey: ['/api/conversations'] });
+    },
+    onError: (error) => {
+      toast({
+        title: "Failed to delete conversation",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  });
+
   const sendVideoMessage = useCallback((videoUrl: string, caption: string) => {
     if (!user || !activeConversation || !activeUser) {
       toast({
