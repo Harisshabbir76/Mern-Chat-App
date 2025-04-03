@@ -21,6 +21,16 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 const loginSchema = z.object({
   email: z.string().min(1, 'Email or username is required'),
   password: z.string().min(6, 'Password must be at least 6 characters'),
+  newPassword: z.string().optional(),
+  confirmNewPassword: z.string().optional(),
+}).refine(data => {
+  if (data.newPassword || data.confirmNewPassword) {
+    return data.newPassword === data.confirmNewPassword;
+  }
+  return true;
+}, {
+  message: "Passwords don't match",
+  path: ["confirmNewPassword"],
 });
 
 type LoginFormValues = z.infer<typeof loginSchema>;
@@ -47,6 +57,7 @@ export default function AuthPage() {
   const [showLoginPassword, setShowLoginPassword] = useState(false);
   const [showRegisterPassword, setShowRegisterPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { user, loginMutation, registerMutation } = useAuth();
 
@@ -75,6 +86,8 @@ export default function AuthPage() {
     defaultValues: {
       email: '',
       password: '',
+      newPassword: '',
+      confirmNewPassword: '',
     },
   });
 
@@ -175,15 +188,51 @@ export default function AuthPage() {
                   {loginForm.formState.errors.password && (
                     <p className="text-sm font-medium text-destructive">{loginForm.formState.errors.password.message}</p>
                   )}
-                  <Button
-                    type="button"
-                    variant="link"
-                    className="text-primary font-medium p-0 h-auto"
-                    onClick={() => alert("Password reset functionality coming soon!")}
-                  >
-                    Forgot Password?
-                  </Button>
                 </div>
+
+                {showForgotPassword && (
+                  <>
+                    <div className="space-y-2">
+                      <label htmlFor="login-newPassword" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                        New Password
+                      </label>
+                      <input
+                        id="login-newPassword"
+                        type="password"
+                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-black ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-gray-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                        placeholder="Enter your new password"
+                        {...loginForm.register("newPassword")}
+                      />
+                      {loginForm.formState.errors.newPassword && (
+                        <p className="text-sm font-medium text-destructive">{loginForm.formState.errors.newPassword.message}</p>
+                      )}
+                    </div>
+                    <div className="space-y-2">
+                      <label htmlFor="login-confirmNewPassword" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                        Confirm New Password
+                      </label>
+                      <input
+                        id="login-confirmNewPassword"
+                        type="password"
+                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-black ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-gray-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                        placeholder="Confirm your new password"
+                        {...loginForm.register("confirmNewPassword")}
+                      />
+                      {loginForm.formState.errors.confirmNewPassword && (
+                        <p className="text-sm font-medium text-destructive">{loginForm.formState.errors.confirmNewPassword.message}</p>
+                      )}
+                    </div>
+                  </>
+                )}
+
+                <Button
+                  type="button"
+                  variant="link"
+                  className="text-primary font-medium p-0 h-auto mb-4"
+                  onClick={() => setShowForgotPassword(!showForgotPassword)}
+                >
+                  {showForgotPassword ? "Hide Forgot Password" : "Forgot Password?"}
+                </Button>
 
                 <Button 
                   type="submit" 
