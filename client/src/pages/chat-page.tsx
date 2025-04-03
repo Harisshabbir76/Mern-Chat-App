@@ -49,7 +49,7 @@ import {
 } from "@/components/ui/alert-dialog";
 
 function ChatPageContent() {
-  const { user, logoutMutation, deleteConversationMutation, deleteMessageMutation } = useAuth(); // Added missing useAuth imports
+  const { user, logoutMutation, deleteConversationMutation, deleteMessageMutation } = useAuth();
   const isMobile = useIsMobile();
   const [showConversations, setShowConversations] = useState(true);
   const [showChat, setShowChat] = useState(false);
@@ -62,6 +62,8 @@ function ChatPageContent() {
   const [showUserProfile, setShowUserProfile] = useState(false);
   const [showUserSearch, setShowUserSearch] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const [isSelectMode, setIsSelectMode] = useState(false); // Added state for selection mode
+  const [selectedMessages, setSelectedMessages] = useState(new Set<string>()); // Added state for selected messages
 
   const {
     conversations,
@@ -202,6 +204,22 @@ function ChatPageContent() {
     };
 
     reader.readAsDataURL(file);
+  };
+
+  const handleSelectMessage = (messageId: string) => {
+    if (selectedMessages.has(messageId)) {
+      setSelectedMessages(new Set(selectedMessages).delete(messageId));
+    } else {
+      setSelectedMessages(new Set([...selectedMessages, messageId]));
+    }
+  };
+
+  const handleDeleteSelectedMessages = () => {
+    selectedMessages.forEach((messageId) => {
+      deleteMessageMutation.mutate(messageId);
+    });
+    setSelectedMessages(new Set());
+    setIsSelectMode(false);
   };
 
   return (
@@ -520,6 +538,16 @@ function ChatPageContent() {
                         <X className="h-5 w-5" />
                       </Button>
                     )}
+                    {isSelectMode && (
+                      <Button variant="ghost" onClick={handleDeleteSelectedMessages}>
+                        Delete Selected
+                      </Button>
+                    )}
+                    {!isSelectMode && (
+                      <Button variant="ghost" onClick={() => setIsSelectMode(true)}>
+                        Select Messages
+                      </Button>
+                    )}
                   </div>
                 </div>
 
@@ -615,11 +643,13 @@ function ChatPageContent() {
                           )}
                           <div
                             className={cn(
-                              `py-2 px-4 max-w-[80%] rounded-lg shadow-sm`,
+                              `py-2 px-4 max-w-[80%] rounded-lg shadow-sm relative`,
                               isSent
                                 ? `bg-primary text-white rounded-tr-none`
                                 : `bg-gray-200 text-gray-900 rounded-tl-none`,
+                              isSelectMode && isSent && selectedMessages.has(message.id) && 'ring-2 ring-blue-500'
                             )}
+                            onClick={() => isSelectMode && handleSelectMessage(message.id)} //Added onClick handler for selection
                           >
                             {message.messageType === "image" &&
                             message.mediaUrl ? (
