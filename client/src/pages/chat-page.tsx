@@ -495,8 +495,8 @@ function ChatPageContent() {
                             className={cn(
                               `py-2 px-4 max-w-[80%] rounded-lg shadow-sm text-white`,
                               isSent 
-                                ? `bg-gray-700 rounded-tr-none` 
-                                : `bg-gray-700 rounded-tl-none`
+                                ? `bg-gray-700 dark:bg-gray-700 rounded-tr-none` 
+                                : `bg-gray-700 dark:bg-gray-700 rounded-tl-none`
                             )}
                           >
                             {message.messageType === 'image' && message.mediaUrl ? (
