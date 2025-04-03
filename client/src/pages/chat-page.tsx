@@ -36,9 +36,20 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 function ChatPageContent() {
-  const { user, logoutMutation } = useAuth();
+  const { user, logoutMutation, deleteConversationMutation, deleteMessageMutation } = useAuth(); // Added missing useAuth imports
   const isMobile = useIsMobile();
   const [showConversations, setShowConversations] = useState(true);
   const [showChat, setShowChat] = useState(false);
@@ -574,8 +585,8 @@ function ChatPageContent() {
                             />
                           )}
                           {isSent && (
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
                                 <Button
                                   variant="ghost"
                                   size="icon"
@@ -583,20 +594,24 @@ function ChatPageContent() {
                                 >
                                   <ChevronDown className="h-4 w-4" />
                                 </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem
-                                  onClick={() => {
-                                    if (window.confirm("Delete this message?")) {
-                                      deleteMessageMutation.mutate(message.id);
-                                    }
-                                  }}
-                                  className="text-destructive"
-                                >
-                                  Delete Message
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Delete Message</AlertDialogTitle>
+                                </AlertDialogHeader>
+                                <AlertDialogDescription>
+                                  Are you sure you want to delete this message? This action cannot be undone.
+                                </AlertDialogDescription>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    onClick={() => deleteMessageMutation.mutate(message.id)}
+                                  >
+                                    Delete
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
                           )}
                           <div
                             className={cn(
