@@ -44,6 +44,9 @@ type RegisterFormValues = z.infer<typeof registerSchema>;
 export default function AuthPage() {
   const [isLogin, setIsLogin] = useState(true);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
+  const [showRegisterPassword, setShowRegisterPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { user, loginMutation, registerMutation } = useAuth();
 
@@ -153,16 +156,33 @@ export default function AuthPage() {
                   <label htmlFor="login-password" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
                     Password
                   </label>
-                  <input
-                    id="login-password"
-                    type="password"
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-black ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-gray-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                    placeholder="Enter your password"
-                    {...loginForm.register("password")}
-                  />
+                  <div className="relative">
+                    <input
+                      id="login-password"
+                      type={showLoginPassword ? "text" : "password"}
+                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-black ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-gray-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                      placeholder="Enter your password"
+                      {...loginForm.register("password")}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowLoginPassword(!showLoginPassword)}
+                      className="absolute right-3 top-2.5 text-gray-500"
+                    >
+                      {showLoginPassword ? "Hide" : "Show"}
+                    </button>
+                  </div>
                   {loginForm.formState.errors.password && (
                     <p className="text-sm font-medium text-destructive">{loginForm.formState.errors.password.message}</p>
                   )}
+                  <Button
+                    type="button"
+                    variant="link"
+                    className="text-primary font-medium p-0 h-auto"
+                    onClick={() => alert("Password reset functionality coming soon!")}
+                  >
+                    Forgot Password?
+                  </Button>
                 </div>
 
                 <Button 
@@ -257,13 +277,22 @@ export default function AuthPage() {
                   <label htmlFor="register-password" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
                     Password
                   </label>
-                  <input
-                    id="register-password"
-                    type="password"
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-black ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-gray-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                    placeholder="Create a password"
-                    {...registerForm.register("password")}
-                  />
+                  <div className="relative">
+                    <input
+                      id="register-password"
+                      type={showRegisterPassword ? "text" : "password"}
+                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-black ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-gray-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                      placeholder="Create a password"
+                      {...registerForm.register("password")}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowRegisterPassword(!showRegisterPassword)}
+                      className="absolute right-3 top-2.5 text-gray-500"
+                    >
+                      {showRegisterPassword ? "Hide" : "Show"}
+                    </button>
+                  </div>
                   {registerForm.formState.errors.password && (
                     <p className="text-sm font-medium text-destructive">{registerForm.formState.errors.password.message}</p>
                   )}
@@ -273,13 +302,22 @@ export default function AuthPage() {
                   <label htmlFor="register-confirm-password" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
                     Confirm Password
                   </label>
-                  <input
-                    id="register-confirm-password"
-                    type="password"
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-black ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-gray-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                    placeholder="Confirm your password"
-                    {...registerForm.register("confirmPassword")}
-                  />
+                  <div className="relative">
+                    <input
+                      id="register-confirm-password"
+                      type={showConfirmPassword ? "text" : "password"}
+                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-black ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-gray-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                      placeholder="Confirm your password"
+                      {...registerForm.register("confirmPassword")}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      className="absolute right-3 top-2.5 text-gray-500"
+                    >
+                      {showConfirmPassword ? "Hide" : "Show"}
+                    </button>
+                  </div>
                   {registerForm.formState.errors.confirmPassword && (
                     <p className="text-sm font-medium text-destructive">{registerForm.formState.errors.confirmPassword.message}</p>
                   )}
