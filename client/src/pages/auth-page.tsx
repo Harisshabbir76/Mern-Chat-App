@@ -124,8 +124,8 @@ export default function AuthPage() {
         {/* Form Section */}
         <div className="p-8">
           <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-gray-800">Rabta</h1>
-            <p className="text-gray-600 mt-2">
+            <h1 className="text-3xl font-bold text-white">Rabta</h1>
+            <p className="text-white mt-2">
               {isLogin ? 'Sign in to continue' : 'Create your account'}
             </p>
           </div>
@@ -202,7 +202,7 @@ export default function AuthPage() {
                       onChange={handleAvatarChange}
                     />
                   </div>
-                  <p className="text-xs text-gray-500 mt-2">Click to add profile photo</p>
+                  <p className="text-xs text-white mt-2">Click to add profile photo</p>
                 </div>
 
                 <div className="space-y-2">
