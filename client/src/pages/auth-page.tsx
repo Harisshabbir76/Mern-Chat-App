@@ -119,8 +119,8 @@ export default function AuthPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 bg-gray-100">
-      <div className="w-full max-w-5xl grid md:grid-cols-2 gap-8 bg-white rounded-lg shadow-md overflow-hidden">
+    <div className="min-h-screen flex items-center justify-center px-4 bg-black">
+      <div className="w-full max-w-5xl grid md:grid-cols-2 gap-8 bg-black text-white rounded-lg shadow-md overflow-hidden">
         {/* Form Section */}
         <div className="p-8">
           <div className="text-center mb-8">
