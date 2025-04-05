@@ -76,7 +76,7 @@ export function UserSearch({ onClose }: UserSearchProps) {
   return (
     <div className="w-full max-w-md bg-white rounded-lg shadow-lg p-6">
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-bold">Find Users</h2>
+        <h2 className="text-xl text-black font-bold">Find Users</h2>
         <Button variant="ghost" size="icon" onClick={onClose}>
           <X className="h-4 w-4" />
         </Button>

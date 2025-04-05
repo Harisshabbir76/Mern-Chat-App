@@ -128,7 +128,7 @@ export function UserProfile({ onClose }: UserProfileProps) {
   return (
     <div className="w-full max-w-md bg-white rounded-lg shadow-lg p-6">
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-bold">Profile Settings</h2>
+        <h2 className="text-xl text-black font-bold">Profile Settings</h2>
         <Button variant="ghost" size="icon" onClick={onClose}>
           <X className="h-4 w-4" />
         </Button>
@@ -154,14 +154,14 @@ export function UserProfile({ onClose }: UserProfileProps) {
             onChange={handleAvatarChange}
           />
         </div>
-        <h3 className="font-medium text-gray-900">{user?.name}</h3>
-        <p className="text-sm text-gray-500">{user?.email}</p>
-        <p className="text-xs text-gray-400 mt-1">Click on avatar to change</p>
+        <h3 className="font-medium text-black">{user?.name}</h3>
+        <p className="text-sm text-black">{user?.email}</p>
+        <p className="text-xs text-black  mt-1">Click on avatar to change</p>
       </div>
       
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <div className="space-y-1">
-          <label htmlFor="name" className="text-sm font-medium">
+          <label htmlFor="name" className="text-sm text-black font-medium">
             Full Name
           </label>
           <Input
@@ -174,7 +174,7 @@ export function UserProfile({ onClose }: UserProfileProps) {
         </div>
         
         <div className="space-y-1">
-          <label htmlFor="username" className="text-sm font-medium">
+          <label htmlFor="username" className="text-sm text-black font-medium">
             Username
           </label>
           <Input
@@ -187,7 +187,7 @@ export function UserProfile({ onClose }: UserProfileProps) {
         </div>
         
         <div className="space-y-1">
-          <label htmlFor="email" className="text-sm font-medium">
+          <label htmlFor="email" className="text-sm text-black font-medium">
             Email
           </label>
           <Input
@@ -201,7 +201,7 @@ export function UserProfile({ onClose }: UserProfileProps) {
         </div>
         
         <div className="space-y-1">
-          <label htmlFor="password" className="text-sm font-medium">
+          <label htmlFor="password" className="text-sm text-black font-medium">
             New Password (optional)
           </label>
           <Input
@@ -215,7 +215,7 @@ export function UserProfile({ onClose }: UserProfileProps) {
         </div>
         
         <div className="space-y-1">
-          <label htmlFor="confirmPassword" className="text-sm font-medium">
+          <label htmlFor="confirmPassword" className="text-sm text-black font-medium">
             Confirm New Password
           </label>
           <Input

@@ -522,7 +522,7 @@ function ChatPageContent() {
                               deleteConversationMutation.mutate(activeConversation.id);
                             }
                           }}
-                          className="text-destructive"
+                          className="text-white"
                         >
                           Delete Conversation
                         </DropdownMenuItem>
